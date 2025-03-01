@@ -1,0 +1,8 @@
+django-5.1.6
+djangorestframework-3.15.2
+django-filter-25.1
+adrf-0.1.9
+async-property-0.2.2
+asgiref-3.8.1
+sqlparse-0.5.3
+markdown-3.7
