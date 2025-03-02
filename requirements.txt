@@ -1,8 +1,11 @@
 django==5.1.6
 djangorestframework==3.15.2
 django-filter==25.1
+django-countries==7.6.1
+typing-extensions==4.12.2
 adrf==0.1.9
 async-property==0.2.2
 asgiref==3.8.1
 sqlparse==0.5.3
 markdown==3.7
+celery==5.4.0

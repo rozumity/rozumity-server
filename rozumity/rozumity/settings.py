@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'adrf',
+    'django-filter',
+    'django-countries',
+    'rozumity',
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -121,3 +127,26 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = "accounts.User"
+
+# Internationalization
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
+
+LANGUAGE_CODE = 'en-us'
+
+TIME_ZONE = 'UTC'
+
+USE_I18N = True
+
+USE_TZ = True
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rozumity.pagination.AsyncLimitOffsetPagination',
+    'PAGE_SIZE': 100,
+#    'EXCEPTION_HANDLER': 'rozumity.errors.custom_jsonapi_exception_handler'
+}
