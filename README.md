@@ -6,5 +6,3 @@ Stack:
 4. ADRF.
 5. Async property.
 6. Markdown.
-7. PostgreSQL.
-8. Celery.
