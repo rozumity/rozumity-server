@@ -8,4 +8,3 @@ async-property==0.2.2
 asgiref==3.8.1
 sqlparse==0.5.3
 markdown==3.7
-celery==5.4.0

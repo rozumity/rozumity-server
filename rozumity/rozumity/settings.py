@@ -39,8 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'adrf',
-    'django-filter',
-    'django-countries',
+    'django_filters',
+    'django_countries',
     'rozumity',
     'accounts'
 ]
@@ -146,7 +146,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rozumity.pagination.AsyncLimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
 #    'EXCEPTION_HANDLER': 'rozumity.errors.custom_jsonapi_exception_handler'
 }

@@ -64,47 +64,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('Users')
 
 
-# TODO: subscription plans
-class AbstractProfile(models.Model):
-    GENDER_CHOICES = (
-        (0, _('male')), (1, _('female')), (2, _('non-binary')), (3, _('transgender')), 
-        (4, _('intersex')), (5, _('prefer not to say'))
-    )
-
-    @staticmethod
-    def get_default_gender():
-        return (5,)
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE, help_text=_('User (Required).'))
-    first_name = models.CharField(max_length=32, blank=True)
-    last_name = models.CharField(max_length=32, blank=True)
-    gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), 
-                        default=get_default_gender, max_length=2, size=2)
-    country = CountryField(blank=True, null=True)
-    date_birth = models.DateField(default=date.today()-timedelta(days=18*365), blank=True, null=True)
-    
-    @property
-    def name(self):
-        return f'{self.first_name} {self.last_name}'
-
-    @property
-    def name_reversed(self):
-        return f'{self.last_name} {self.first_name}'
-
-    @property
-    def age(self):
-        return (date.today() - self.date_birth).days / 365
-
-    @property
-    def is_adult(self):
-        return True if self.age > 18 else False
-    
-    @property
-    def gender_verbose(self):
-        genders = dict(self.GENDER_CHOICES)
-        return ', '.join([genders[gender] for gender in self.gender])
-
-
 class Speciality(models.Model):
     code = models.SmallIntegerField()
     title = models.CharField(max_length=128)
@@ -119,7 +78,7 @@ class Speciality(models.Model):
 
 class University(models.Model):
     title = models.CharField(max_length=128)
-    country = CountryField()
+    country = CountryField(blank_label="(Select country)")
     
     class Meta:
         verbose_name = _('University')
@@ -147,6 +106,51 @@ class Education(models.Model):
         return round(delta.days / 365)
 
 
+# TODO: subscription plans
+class AbstractProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, help_text=_('User (Required).'), primary_key=True)
+    GENDER_CHOICES = (
+        (0, _('male')), (1, _('female')), (2, _('non-binary')), (3, _('transgender')), 
+        (4, _('intersex')), (5, _('prefer not to say'))
+    )
+
+    first_name = models.CharField(max_length=32, blank=True)
+    last_name = models.CharField(max_length=32, blank=True)
+    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5),
+    #                    default=(5,), max_length=2, size=2)
+    gender = models.SmallIntegerField(choices=GENDER_CHOICES, default=5)
+    country = CountryField(blank=True, blank_label="(Select country)")
+    date_birth = models.DateField(default=date.today()-timedelta(days=18*365), blank=True, null=True)
+    
+    class Meta:
+        abstract=True
+    
+    @property
+    def name(self):
+        return f'{self.first_name} {self.last_name}'
+
+    @property
+    def name_reversed(self):
+        return f'{self.last_name} {self.first_name}'
+
+    @property
+    def age(self):
+        return (date.today() - self.date_birth).days / 365
+
+    @property
+    def is_adult(self):
+        return True if self.age > 18 else False
+    
+    @property
+    def gender_verbose(self):
+        genders = dict(self.GENDER_CHOICES)
+        return ', '.join([genders[gender] for gender in self.gender])
+    
+    @property
+    def gender_default(self):
+        return (5, _('prefer not to say'))
+
+
 class ClientProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Client's Profile")
@@ -159,7 +163,7 @@ class ClientProfile(AbstractProfile):
 class ExpertProfile(AbstractProfile):
     education = models.ManyToManyField(Education, blank=True)
     education_extra = models.TextField(max_length=500, blank=True)
-    countries_allowed = CountryField(many=True, blank=True, null=True)
+    countries_allowed = CountryField(multiple=True, blank=True, blank_label="(Select countries)")
 
     class Meta:
         verbose_name = _("Expert's Profile")

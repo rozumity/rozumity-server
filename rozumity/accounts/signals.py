@@ -1,21 +1,22 @@
-# https://simpleisbetterthancomplex.com/tutorial/2016/07/28/how-to-create-django-signals.html
-# https://stackoverflow.com/questions/62864963/best-approach-to-auto-create-profile-object-upon-user-creation-in-django
+from django.dispatch import receiver
 from django.db.models.signals import post_save
-from rozumity.receivers import async_receiver as receiver
+from django.utils.translation import gettext_lazy as _
+from django.db.utils import IntegrityError
 
 from .models import User, ClientProfile, ExpertProfile, StaffProfile
 
 
 @receiver(post_save, sender=User, dispatch_uid='user.create_user_profile')
-def create_user_profile(sender, instance, created, **kwargs):
+async def create_user_profile(sender, instance, created, **kwargs):
+    profile_model = ExpertProfile if instance.is_expert else ClientProfile
     if instance.is_staff:
-        StaffProfile.objects.create(user=instance)
-    elif instance.is_expert:
-        ExpertProfile.objects.create(user=instance)
-    else:
-        ClientProfile.objects.create(user=instance)
+        profile_model = StaffProfile
+    try:
+        await profile_model.objects.acreate(user=instance)
+    except IntegrityError:
+        pass
 
 
-@receiver(post_save, sender=User, dispatch_uid='user.save_user_profile')
-def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+#@receiver(post_save, sender=User, dispatch_uid='user.save_user_profile')
+#async def save_user_profile(sender, instance, **kwargs):
+#    await instance.profile.asave()
