@@ -3,11 +3,11 @@ from datetime import date, timedelta, timezone
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-#from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
+#from django.contrib.postgres.fields import ArrayField
 
-from managers import EmailUserManager
+from .managers import EmailUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
