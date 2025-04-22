@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, timezone
 
 from django.db import models
 from django.utils import timezone
@@ -180,3 +180,112 @@ class StaffProfile(AbstractProfile):
     
     def __str__(self):
         return str(self.user.email)
+
+
+class TherapyContract(models.Model):
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
+    expert = models.ForeignKey(ExpertProfile, on_delete=models.CASCADE)
+    subscriptionClient = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractClientPlan")
+    subscriptionExpert = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractExpertPlan")
+    date_start = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        verbose_name = _("Therapy Contract")
+        verbose_name_plural = _("Therapy Contracts")
+    
+    def __str__(self):
+        return f'{self.client} - {self.expert}'
+    
+    @property
+    def is_paid(self):
+        return True if self.subscriptionClient or self.subscriptionExpert else False
+    
+    @property
+    def is_paid_full(self):
+        return True if self.subscriptionClient and self.subscriptionExpert else False
+    
+    @property
+    def is_paid_client(self):
+        return True if self.subscriptionClient else False
+    
+    @property
+    def is_paid_expert(self):
+        return True if self.subscriptionExpert else False
+
+    @property
+    def date_end_client(self):
+        if self.subscriptionClient:
+            return self.date_start + timedelta(days=self.subscriptionClient.duration)
+
+    @property
+    def date_end_expert(self):
+        if self.subscriptionExpert:
+            return self.date_start + timedelta(days=self.subscriptionExpert.duration)
+
+    @property
+    def date_end(self):
+        date_end_client = self.date_end_client
+        date_end_expert = self.date_end_expert
+        if date_end_client or date_end_expert:
+            return date_end_client if date_end_client > date_end_expert else date_end_expert
+    
+    @property
+    def is_active_client(self):
+        return self.date_end_client < timezone.now()
+
+    @property
+    def is_active_expert(self):
+        return self.date_end_expert < timezone.now()
+
+    @property
+    def is_active(self):
+        return self.date_end < timezone.now()
+
+    @property
+    def has_diary(self):
+        return self.subscriptionClient.has_diary or self.subscriptionExpert.has_diary
+
+    @property
+    def has_ai(self):
+        return self.subscriptionClient.has_ai or self.subscriptionExpert.has_ai
+    
+    @property
+    def has_screening(self):
+        return self.subscriptionClient.has_screening or self.subscriptionExpert.has_screening
+    
+    @property
+    def has_dyagnosis(self):
+        return self.subscriptionExpert.has_dyagnosis
+
+
+class SubscriptionPlan(models.Model):
+    title = models.CharField(max_length=64)
+    description = models.TextField(max_length=500)
+    duration = models.DurationField()
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    owner_type = models.SmallIntegerField(choices=((0, _('client')), (1, _('expert'))), default=0)
+    has_diary = models.BooleanField(default=False)
+    has_ai = models.BooleanField(default=False)
+    has_screening = models.BooleanField(default=False)
+    has_dyagnosis = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name = _("Subscription Plan")
+        verbose_name_plural = _("Subscription Plans")
+    
+    def __str__(self):
+        return f"{self.title} - {self.price} ({self.owner_type})"
+
+
+class Diary(models.Model):
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
+    theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
+    has_health_attention = models.BooleanField(default=False)
+    date_start = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        verbose_name = _("Diary")
+        verbose_name_plural = _("Diaries")
+    
+    def __str__(self):
+        return f'{self.client} - {self.expert}'
