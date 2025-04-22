@@ -11,7 +11,7 @@ urlpatterns = [
         name='user'
     ),
     path(
-        "users",
+        "users/",
         UserListCreateView.as_view(),
         name='users'
     ),
