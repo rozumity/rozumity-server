@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User, ClientProfile, ExpertProfile, StaffProfile, University, Speciality
+from .models import User, ClientProfile, ExpertProfile, StaffProfile, University, Speciality, TherapyContract, SubscriptionPlan, Diary
 
 
 @admin.register(User)
@@ -27,6 +27,22 @@ class ExpertProfileAdmin(admin.ModelAdmin):
 class UniversityAdmin(admin.ModelAdmin):
     pass
 
+
 @admin.register(Speciality)
 class SpecialityAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TherapyContract)
+class TherapyContractAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Diary)
+class DiaryAdmin(admin.ModelAdmin):
     pass
