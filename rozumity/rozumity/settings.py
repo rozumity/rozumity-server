@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'adrf',
     'django_filters',
     'django_countries',
+    'drf_spectacular',
     'rozumity',
     'accounts'
 ]
@@ -148,5 +149,16 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
-#    'EXCEPTION_HANDLER': 'rozumity.errors.custom_jsonapi_exception_handler'
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ]
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Rozumity API',
+    'DESCRIPTION': 'Rozumity is a psychological platform with AI features',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False
 }
