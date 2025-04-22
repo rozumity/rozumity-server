@@ -10,16 +10,9 @@ from django_countries.fields import CountryField
 
 
 class CustomUserManager(BaseUserManager):
-    """
-    Custom user model manager where email is the unique identifiers
-    for authentication instead of usernames.
-    """
     use_in_migrations = True
-    
+
     def create_user(self, email, password, **extra_fields):
-        """
-        Create and save a user with the given email and password.
-        """
         if not email:
             raise ValueError(_("The Email must be set"))
         email = self.normalize_email(email)
@@ -29,9 +22,6 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        """
-        Create and save a SuperUser with the given email and password.
-        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
@@ -56,22 +46,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    def __str__(self):
-        return str(self.email)
-
     class Meta:
         verbose_name = _('User')
         verbose_name_plural = _('Users')
+
+    def __str__(self):
+        return str(self.email)
 
 
 class Speciality(models.Model):
     code = models.SmallIntegerField()
     title = models.CharField(max_length=128)
-    
+
     class Meta:
         verbose_name = _('Speciality')
         verbose_name_plural = _('Specialities')
-    
+
     def __str__(self):
         return str(self.title)
 
@@ -79,11 +69,11 @@ class Speciality(models.Model):
 class University(models.Model):
     title = models.CharField(max_length=128)
     country = CountryField(blank_label="(Select country)")
-    
+
     class Meta:
         verbose_name = _('University')
         verbose_name_plural = _('Universities')
-    
+
     def __str__(self):
         return str(self.title)
 
@@ -99,14 +89,17 @@ class Education(models.Model):
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
     date_start = models.DateField()
     date_end = models.DateField()
-    
+
+    class Meta:
+        verbose_name = _("Education")
+        verbose_name_plural = _("Educations")
+
     @property
     def education_duration(self):
         delta = self.date_start - self.date_end
         return round(delta.days / 365)
 
 
-# TODO: subscription plans
 class AbstractProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, help_text=_('User (Required).'), primary_key=True)
     GENDER_CHOICES = (
@@ -116,15 +109,16 @@ class AbstractProfile(models.Model):
 
     first_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
-    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5),
-    #                    default=(5,), max_length=2, size=2)
+    # PostgreSQL specific django_postgres_extensions
+    # Allows to select multiple genders at once, for example, intersex female
+    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), default=(5,), max_length=2, size=2)
     gender = models.SmallIntegerField(choices=GENDER_CHOICES, default=5)
     country = CountryField(blank=True, blank_label="(Select country)")
     date_birth = models.DateField(default=date.today()-timedelta(days=18*365), blank=True, null=True)
-    
+
     class Meta:
         abstract=True
-    
+
     @property
     def name(self):
         return f'{self.first_name} {self.last_name}'
@@ -140,12 +134,12 @@ class AbstractProfile(models.Model):
     @property
     def is_adult(self):
         return True if self.age > 18 else False
-    
+
     @property
     def gender_verbose(self):
         genders = dict(self.GENDER_CHOICES)
         return ', '.join([genders[gender] for gender in self.gender])
-    
+
     @property
     def gender_default(self):
         return (5, _('prefer not to say'))
@@ -155,7 +149,7 @@ class ClientProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Client's Profile")
         verbose_name_plural = _("Clients' Profiles")
-    
+
     def __str__(self):
         return str(self.user.email)
 
@@ -168,7 +162,7 @@ class ExpertProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Expert's Profile")
         verbose_name_plural = _("Experts' Profiles")
-    
+
     def __str__(self):
         return str(self.user.email)
 
@@ -177,9 +171,28 @@ class StaffProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Staff member's Profile")
         verbose_name_plural = _("Staff members' Profiles")
-    
+
     def __str__(self):
         return str(self.user.email)
+
+
+class SubscriptionPlan(models.Model):
+    title = models.CharField(max_length=64)
+    description = models.TextField(max_length=500)
+    duration = models.DurationField()
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    owner_type = models.SmallIntegerField(choices=((0, _('client')), (1, _('expert'))), default=0)
+    has_diary = models.BooleanField(default=False)
+    has_ai = models.BooleanField(default=False)
+    has_screening = models.BooleanField(default=False)
+    has_dyagnosis = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = _("Subscription Plan")
+        verbose_name_plural = _("Subscription Plans")
+
+    def __str__(self):
+        return f"{self.title} - {self.price} ({self.owner_type})"
 
 
 class TherapyContract(models.Model):
@@ -188,26 +201,26 @@ class TherapyContract(models.Model):
     subscriptionClient = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractClientPlan")
     subscriptionExpert = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractExpertPlan")
     date_start = models.DateTimeField(default=timezone.now)
-    
+
     class Meta:
         verbose_name = _("Therapy Contract")
         verbose_name_plural = _("Therapy Contracts")
-    
+
     def __str__(self):
         return f'{self.client} - {self.expert}'
-    
+
     @property
     def is_paid(self):
         return True if self.subscriptionClient or self.subscriptionExpert else False
-    
+
     @property
     def is_paid_full(self):
         return True if self.subscriptionClient and self.subscriptionExpert else False
-    
+
     @property
     def is_paid_client(self):
         return True if self.subscriptionClient else False
-    
+
     @property
     def is_paid_expert(self):
         return True if self.subscriptionExpert else False
@@ -228,7 +241,7 @@ class TherapyContract(models.Model):
         date_end_expert = self.date_end_expert
         if date_end_client or date_end_expert:
             return date_end_client if date_end_client > date_end_expert else date_end_expert
-    
+
     @property
     def is_active_client(self):
         return self.date_end_client < timezone.now()
@@ -248,33 +261,14 @@ class TherapyContract(models.Model):
     @property
     def has_ai(self):
         return self.subscriptionClient.has_ai or self.subscriptionExpert.has_ai
-    
+
     @property
     def has_screening(self):
         return self.subscriptionClient.has_screening or self.subscriptionExpert.has_screening
-    
+
     @property
     def has_dyagnosis(self):
         return self.subscriptionExpert.has_dyagnosis
-
-
-class SubscriptionPlan(models.Model):
-    title = models.CharField(max_length=64)
-    description = models.TextField(max_length=500)
-    duration = models.DurationField()
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    owner_type = models.SmallIntegerField(choices=((0, _('client')), (1, _('expert'))), default=0)
-    has_diary = models.BooleanField(default=False)
-    has_ai = models.BooleanField(default=False)
-    has_screening = models.BooleanField(default=False)
-    has_dyagnosis = models.BooleanField(default=False)
-    
-    class Meta:
-        verbose_name = _("Subscription Plan")
-        verbose_name_plural = _("Subscription Plans")
-    
-    def __str__(self):
-        return f"{self.title} - {self.price} ({self.owner_type})"
 
 
 class Diary(models.Model):
