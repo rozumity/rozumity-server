@@ -1,0 +1,87 @@
+from django.urls import path
+from accounts.views import *
+
+
+app_name = 'accounts'
+
+urlpatterns = [
+    path(
+        "user/<int:pk>",
+        UserRetrieveUpdateDestroyView.as_view(),
+        name='user'
+    ),
+    path(
+        "users",
+        UserListCreateView.as_view(),
+        name='users'
+    ),
+    path(
+        "education/<int:pk>",
+        EducationRetrieveUpdateDestroyView.as_view(),
+        name='educations'
+    ),
+    path(
+        "educations/",
+        EducationListCreateView.as_view(),
+        name='educations'
+    ),
+    path(
+        "education/university/<int:pk>",
+        UniversityRetrieveUpdateDestroyView.as_view(),
+        name='university'
+    ),
+    path(
+        "education/universities/",
+        UniversityListCreateView.as_view(),
+        name='universities'
+    ),
+    path(
+        "education/speciality/<int:pk>",
+        SpecialityRetrieveUpdateDestroyView.as_view(),
+        name='speciality'
+    ),
+    path(
+        "education/specialities/",
+        SpecialityListCreateView.as_view(),
+        name='speciality'
+    ),
+    path(
+        "profile/client/<int:pk>",
+        ClientProfileRetrieveUpdateDestroyView.as_view(),
+        name='client-profile'
+    ),
+    path(
+        "profile/clients",
+        ClientProfileListCreateView.as_view(),
+        name='client-profiles'
+    ),
+    path(
+        "profile/expert/<int:pk>",
+        ExpertProfileRetrieveUpdateDestroyView.as_view(),
+        name='expert-profile'
+    ),
+    path(
+        "profile/experts",
+        ExpertProfileListCreateView.as_view(),
+        name='expert-profiles'
+    ),
+    path(
+        "subscription/<int:pk>",
+        SubscriptionPlanRetrieveUpdateDestroyView.as_view(),
+        name='subscription'
+    ),
+    path(
+        "subscriptions",
+        ExpertProfileListCreateView.as_view(),
+        name='subscriptions'
+    ),
+    path(
+        "diary/<int:pk>",
+        DiaryRetrieveUpdateDestroyView.as_view(),
+        name='diary'),
+    path(
+        "diaries",
+        DiaryListCreateView.as_view(),
+        name='diaries'
+    )
+]
