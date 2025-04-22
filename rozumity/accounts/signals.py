@@ -8,8 +8,10 @@ from .models import User, ClientProfile, ExpertProfile, StaffProfile
 
 @receiver(post_save, sender=User, dispatch_uid='user.create_user_profile')
 async def create_user_profile(sender, instance, created, **kwargs):
-    profile_model = ExpertProfile if instance.is_expert else ClientProfile
+    profile_model = ClientProfile
     if instance.is_staff:
+        profile_model = StaffProfile
+    elif instance.is_expert:
         profile_model = StaffProfile
     try:
         await profile_model.objects.acreate(user=instance)
@@ -20,10 +22,6 @@ async def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ClientProfile, dispatch_uid='clientProfile.delete_user')
 @receiver(post_delete, sender=ExpertProfile, dispatch_uid='expertProfile.delete_user')
 @receiver(post_delete, sender=StaffProfile, dispatch_uid='staffProfile.delete_user')
-async def delete_expert_profile(sender, instance, created, **kwargs):
-    await sender.adelete(id=instance.user.id)
-
-
-#@receiver(post_save, sender=User, dispatch_uid='user.save_user_profile')
-#async def save_user_profile(sender, instance, **kwargs):
-#    await instance.profile.asave()
+async def delete_profile(sender, instance, **kwargs):
+    user = await User.objects.aget(id=instance.user.id)
+    await user.adelete()
