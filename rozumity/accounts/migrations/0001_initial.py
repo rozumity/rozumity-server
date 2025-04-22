@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Users',
             },
             managers=[
-                ('objects', accounts.models.CustomUserManager()),
+                ('objects', accounts.models.EmailUserManager()),
             ],
         ),
         migrations.CreateModel(
