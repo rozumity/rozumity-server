@@ -52,7 +52,7 @@ urlpatterns = [
     ),
     path(
         "profile/clients",
-        ClientProfileListCreateView.as_view(),
+        ClientProfileListView.as_view(),
         name='client-profiles'
     ),
     path(
@@ -62,7 +62,7 @@ urlpatterns = [
     ),
     path(
         "profile/experts",
-        ExpertProfileListCreateView.as_view(),
+        ExpertProfileListView.as_view(),
         name='expert-profiles'
     ),
     path(
@@ -72,7 +72,7 @@ urlpatterns = [
     ),
     path(
         "subscriptions",
-        ExpertProfileListCreateView.as_view(),
+        SubscriptionPlanListCreateView.as_view(),
         name='subscriptions'
     ),
     path(
