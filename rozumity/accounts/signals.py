@@ -13,12 +13,15 @@ async def create_user_profile(sender, instance, created, **kwargs):
         profile_model = StaffProfile
     elif instance.is_expert:
         profile_model = ExpertProfile
-    await profile_model.objects.acreate(user=instance)
+    try:
+        await profile_model.objects.acreate(id=instance)
+    except IntegrityError:
+        pass
 
 
 @receiver(post_delete, sender=ClientProfile, dispatch_uid='clientProfile.delete_user')
 @receiver(post_delete, sender=ExpertProfile, dispatch_uid='expertProfile.delete_user')
 @receiver(post_delete, sender=StaffProfile, dispatch_uid='staffProfile.delete_user')
 async def delete_profile(sender, instance, **kwargs):
-    user = await User.objects.aget(id=instance.user_id)
+    user = await User.objects.aget(id=instance._id)
     await user.adelete()
