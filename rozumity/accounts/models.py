@@ -78,7 +78,11 @@ class Education(models.Model):
 
 
 class AbstractProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, help_text=_('User (Required).'), primary_key=True)
+    id = models.OneToOneField(
+        User, on_delete=models.CASCADE, 
+        help_text=_('User (Required).'), 
+        primary_key=True, to_field='id'
+    )
     GENDER_CHOICES = (
         (0, _('male')), (1, _('female')), (2, _('non-binary')), (3, _('transgender')), 
         (4, _('intersex')), (5, _('prefer not to say'))
@@ -97,8 +101,12 @@ class AbstractProfile(models.Model):
         abstract=True
 
     @property
-    def user_id(self):
-        return self.user.id
+    def _id(self):
+        return self.id.id
+
+    @property
+    def email(self):
+        return self.id.email
 
     @property
     def name(self):
@@ -132,7 +140,7 @@ class ClientProfile(AbstractProfile):
         verbose_name_plural = _("Clients' Profiles")
 
     def __str__(self):
-        return str(self.user.email)
+        return str(self.email)
 
 
 class ExpertProfile(AbstractProfile):
@@ -145,7 +153,7 @@ class ExpertProfile(AbstractProfile):
         verbose_name_plural = _("Experts' Profiles")
 
     def __str__(self):
-        return str(self.user.email)
+        return str(self.email)
 
 
 class StaffProfile(AbstractProfile):
@@ -154,7 +162,7 @@ class StaffProfile(AbstractProfile):
         verbose_name_plural = _("Staff members' Profiles")
 
     def __str__(self):
-        return str(self.user.email)
+        return str(self.email)
 
 
 class SubscriptionPlan(models.Model):
@@ -253,7 +261,7 @@ class TherapyContract(models.Model):
 
 
 class Diary(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="id")
     theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
     has_health_attention = models.BooleanField(default=False)
     date_start = models.DateTimeField(default=timezone.now)
