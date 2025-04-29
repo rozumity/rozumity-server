@@ -18,7 +18,7 @@ urlpatterns = [
     path(
         "education/<int:pk>",
         EducationRetrieveUpdateDestroyView.as_view(),
-        name='educations'
+        name='education'
     ),
     path(
         "educations/",
