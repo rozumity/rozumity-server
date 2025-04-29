@@ -78,7 +78,7 @@ class Education(models.Model):
 
 
 class AbstractProfile(models.Model):
-    id = models.OneToOneField(
+    user = models.OneToOneField(
         User, on_delete=models.CASCADE, 
         help_text=_('User (Required).'), 
         primary_key=True, to_field='id'
@@ -102,11 +102,11 @@ class AbstractProfile(models.Model):
 
     @property
     def _id(self):
-        return self.id.id
+        return self.user.id
 
     @property
     def email(self):
-        return self.id.email
+        return self.user.email
 
     @property
     def name(self):
@@ -261,7 +261,7 @@ class TherapyContract(models.Model):
 
 
 class Diary(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="id")
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="user")
     theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
     has_health_attention = models.BooleanField(default=False)
     date_start = models.DateTimeField(default=timezone.now)
