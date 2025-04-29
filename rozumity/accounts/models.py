@@ -101,7 +101,7 @@ class AbstractProfile(models.Model):
         abstract=True
 
     @property
-    def _id(self):
+    def user_id(self):
         return self.user.id
 
     @property

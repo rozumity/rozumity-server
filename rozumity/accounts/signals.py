@@ -23,5 +23,5 @@ async def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ExpertProfile, dispatch_uid='expertProfile.delete_user')
 @receiver(post_delete, sender=StaffProfile, dispatch_uid='staffProfile.delete_user')
 async def delete_profile(sender, instance, **kwargs):
-    user = await User.objects.aget(id=instance._id)
+    user = await User.objects.aget(id=instance.user_id)
     await user.adelete()
