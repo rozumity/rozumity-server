@@ -97,6 +97,10 @@ class AbstractProfile(models.Model):
         abstract=True
 
     @property
+    def user_id(self):
+        return self.user.id
+
+    @property
     def name(self):
         return f'{self.first_name} {self.last_name}'
 
