@@ -22,7 +22,6 @@ class AsyncCacheListMixin:
     async def get(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.lower().split("list")[0]
-            print(cache_key)
         else:
             cache_key = self.cache_key
         if self.pagination_class and "LimitOffset" in self.pagination_class.__name__:
@@ -41,7 +40,6 @@ class AsyncCacheListMixin:
             resp = await self.alist(request, *args, **kwargs)
             data_ids, cached_data = [], {}
             for o in resp.data["results"]:
-                print(o)
                 cache_key_id = f"{cache_key}_{o['id']}"
                 if not await cache.ahas_key(cache_key_id):
                     cached_data[cache_key_id] = o
@@ -55,7 +53,6 @@ class AsyncCacheCreateMixin:
     async def post(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.replace("List", "").lower().split("create")[0]
-            print(cache_key)
         else:
             cache_key = self.cache_key
         resp = await self.acreate(request, *args, **kwargs)
@@ -68,7 +65,6 @@ class AsyncCacheRetrieveMixin:
     async def get(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.lower().split("retrieve")[0]
-            print(cache_key)
         else:
             cache_key = self.cache_key
         cache_key = f"{cache_key}_{self.kwargs['pk']}"
@@ -84,7 +80,6 @@ class AsyncCacheUpdateMixin:
     async def patch(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.replace("Retrieve", "").replace("Destroy", "").lower().split("update")[0]
-            print(cache_key)
         else:
             cache_key = self.cache_key
         cache_key = f"{cache_key}_{self.kwargs['pk']}"
@@ -95,7 +90,6 @@ class AsyncCacheUpdateMixin:
     async def put(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.replace("Retrieve", "").replace("Destroy", "").lower().split("update")[0]
-            print(cache_key)
         else:
             cache_key = self.cache_key
         cache_key = f"{cache_key}_{self.kwargs['pk']}"
@@ -108,7 +102,6 @@ class AsyncCacheDestroyMixin:
     async def delete(self, request, *args, **kwargs):
         if not hasattr(self, "cache_key"):
             cache_key = self.__class__.__name__.replace("Retrieve", "").replace("Update", "").lower().split("destroy")[0]
-            print(cache_key)
         cache_key = f"{cache_key}_{self.kwargs['pk']}"
         resp = await self.adestroy(request, *args, **kwargs)
         if await cache.ahas_key(cache_key):
