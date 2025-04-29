@@ -1,8 +1,5 @@
 from adrf.serializers import ModelSerializer
-from rest_framework.serializers import (
-    CharField, HyperlinkedIdentityField, 
-    PrimaryKeyRelatedField
-)
+from rest_framework.serializers import HyperlinkedIdentityField, EmailField
 from django_countries.serializer_fields import CountryField
 from django_countries.serializers import CountryFieldMixin
 
@@ -38,45 +35,45 @@ class EducationSerializer(ModelSerializer):
 # --- Profile
 
 class UserSerializer(ModelSerializer):
+    id = EmailField(source='email')
+    
     class Meta:
         model = User
-        fields = ["email", "is_staff", "is_client", "is_expert", "is_active", "date_joined"]
+        fields = ["id", "email", "is_staff", "is_client", "is_expert", "is_active", "date_joined"]
         read_only_fields = fields.copy()
 
 
-class ClientProfileSerializer(CountryFieldMixin, ModelSerializer):
-    id = PrimaryKeyRelatedField(read_only=True)
-    user = HyperlinkedIdentityField(view_name="accounts:user")
+class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
     country = CountryField()
+    
+    async def ato_representation(self, instance):
+        representation = await super().ato_representation(instance)
+        representation['id'] = representation.pop('user')
+        return representation
 
+
+class ClientProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ClientProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "user")
+        read_only_fields = ('date_birth', "id", "user")
 
 
-class ExpertProfileSerializer(CountryFieldMixin, ModelSerializer):
-    id = PrimaryKeyRelatedField(read_only=True)
-    user = HyperlinkedIdentityField(view_name="accounts:user")
+class ExpertProfileSerializer(ProfileSerializerBase):
     education = HyperlinkedIdentityField(view_name="accounts:education")
-    country = CountryField()
     countries_allowed = CountryField()
 
     class Meta:
         model = ExpertProfile
-        read_only_fields = ('date_birth', "user")
         fields = "__all__"
+        read_only_fields = ('date_birth', "id", "user")
 
 
-class StaffProfileSerializer(CountryFieldMixin, ModelSerializer):
-    id = PrimaryKeyRelatedField(read_only=True)
-    user = HyperlinkedIdentityField(view_name="accounts:user")
-    country = CountryField()
-
+class StaffProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "user")
+        read_only_fields = ('date_birth', "id", "user")
 
 # --- Profile
 # Subscription ---
