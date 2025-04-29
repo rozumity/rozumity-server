@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from .models import User, ClientProfile, ExpertProfile, StaffProfile, University, Speciality, TherapyContract, SubscriptionPlan, Diary
+from .models import (
+    User, ClientProfile, ExpertProfile, StaffProfile, University, 
+    Speciality, TherapyContract, SubscriptionPlan, Diary
+)
 
 
 @admin.register(User)
