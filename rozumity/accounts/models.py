@@ -1,3 +1,4 @@
+from uuid import uuid4
 from datetime import date, timedelta, timezone
 
 from django.db import models
@@ -11,8 +12,8 @@ from .managers import EmailUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    id = models.UUIDField(primary_key=True, default=uuid4, unique=True, editable=False)
     email = models.EmailField(_("email address"), unique=True, max_length=64)
-    is_staff = models.BooleanField(default=False)
     is_client = models.BooleanField(default=False)
     is_expert = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -29,6 +30,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.email)
+    
+    @property
+    def is_staff(self):
+        return self.is_superuser
 
 
 class Speciality(models.Model):
@@ -72,20 +77,23 @@ class Education(models.Model):
         verbose_name_plural = _("Educations")
 
     @property
-    def education_duration(self):
+    async def education_duration(self):
         delta = self.date_start - self.date_end
         return round(delta.days / 365)
 
 
 class AbstractProfile(models.Model):
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, 
-        help_text=_('User (Required).'), 
-        primary_key=True, to_field='id'
+    id = models.UUIDField(
+        primary_key=True, default=uuid4, unique=True, editable=False
+    )
+    email = models.OneToOneField(
+        User, on_delete=models.CASCADE, help_text=_('User Email'), 
+        unique=True, to_field='email'
     )
     GENDER_CHOICES = (
-        (0, _('male')), (1, _('female')), (2, _('non-binary')), (3, _('transgender')), 
-        (4, _('intersex')), (5, _('prefer not to say'))
+        (0, _('male')), (1, _('female')), (2, _('non-binary')), 
+        (3, _('transgender')), (4, _('intersex')), 
+        (5, _('prefer not to say'))
     )
 
     first_name = models.CharField(max_length=32, blank=True)
@@ -95,42 +103,36 @@ class AbstractProfile(models.Model):
     #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), default=(5,), max_length=2, size=2)
     gender = models.SmallIntegerField(choices=GENDER_CHOICES, default=5)
     country = CountryField(blank=True, blank_label="(Select country)")
-    date_birth = models.DateField(default=date.today()-timedelta(days=18*365), blank=True, null=True)
+    date_birth = models.DateField(
+        default=date.today()-timedelta(days=18*365), blank=True, null=True
+    )
 
     class Meta:
         abstract=True
 
     @property
-    def user_id(self):
-        return self.user.id
-
-    @property
-    def email(self):
-        return self.user.email
-
-    @property
-    def name(self):
+    async def name(self):
         return f'{self.first_name} {self.last_name}'
 
     @property
-    def name_reversed(self):
+    async def name_reversed(self):
         return f'{self.last_name} {self.first_name}'
 
     @property
-    def age(self):
+    async def age(self):
         return (date.today() - self.date_birth).days / 365
 
     @property
-    def is_adult(self):
+    async def is_adult(self):
         return True if self.age > 18 else False
 
     @property
-    def gender_verbose(self):
+    async def gender_verbose(self):
         genders = dict(self.GENDER_CHOICES)
         return ', '.join([genders[gender] for gender in self.gender])
 
     @property
-    def gender_default(self):
+    async def gender_default(self):
         return (5, _('prefer not to say'))
 
 
@@ -185,10 +187,22 @@ class SubscriptionPlan(models.Model):
 
 
 class TherapyContract(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
-    expert = models.ForeignKey(ExpertProfile, on_delete=models.CASCADE)
-    subscriptionClient = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractClientPlan")
-    subscriptionExpert = models.ForeignKey('SubscriptionPlan', on_delete=models.PROTECT, related_name="contractExpertPlan")
+    client_email = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, blank=True,
+        to_field='email', related_name="contract"
+    )
+    expert_email = models.ForeignKey(
+        ExpertProfile, on_delete=models.CASCADE, blank=True,
+        to_field='email', related_name="contract"
+    )
+    client_subscription = models.ForeignKey(
+        SubscriptionPlan, on_delete=models.PROTECT, blank=True,
+        related_name="client_contract"
+    )
+    expert_subscription = models.ForeignKey(
+        SubscriptionPlan, on_delete=models.PROTECT, blank=True,
+        related_name="expert_contract"
+    )
     date_start = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -199,69 +213,78 @@ class TherapyContract(models.Model):
         return f'{self.client} - {self.expert}'
 
     @property
-    def is_paid(self):
-        return True if self.subscriptionClient or self.subscriptionExpert else False
+    async def is_paid(self):
+        return any(self.subscriptionClient, self.subscriptionExpert)
 
     @property
-    def is_paid_full(self):
-        return True if self.subscriptionClient and self.subscriptionExpert else False
+    async def is_paid_full(self):
+        return all(self.subscriptionClient, self.subscriptionExpert)
 
     @property
-    def is_paid_client(self):
+    async def is_paid_client(self):
         return True if self.subscriptionClient else False
 
     @property
-    def is_paid_expert(self):
+    async def is_paid_expert(self):
         return True if self.subscriptionExpert else False
 
     @property
-    def date_end_client(self):
+    async def date_end_client(self):
         if self.subscriptionClient:
             return self.date_start + timedelta(days=self.subscriptionClient.duration)
 
     @property
-    def date_end_expert(self):
+    async def date_end_expert(self):
         if self.subscriptionExpert:
             return self.date_start + timedelta(days=self.subscriptionExpert.duration)
 
     @property
-    def date_end(self):
+    async def date_end(self):
         date_end_client = self.date_end_client
         date_end_expert = self.date_end_expert
         if date_end_client or date_end_expert:
             return date_end_client if date_end_client > date_end_expert else date_end_expert
 
     @property
-    def is_active_client(self):
+    async def is_active_client(self):
         return self.date_end_client < timezone.now()
 
     @property
-    def is_active_expert(self):
+    async def is_active_expert(self):
         return self.date_end_expert < timezone.now()
 
     @property
-    def is_active(self):
+    async def is_active(self):
         return self.date_end < timezone.now()
 
     @property
-    def has_diary(self):
-        return self.subscriptionClient.has_diary or self.subscriptionExpert.has_diary
+    async def has_diary(self):
+        return any(
+            self.subscriptionClient.has_diary,
+            self.subscriptionExpert.has_diary
+        )
 
     @property
-    def has_ai(self):
-        return self.subscriptionClient.has_ai or self.subscriptionExpert.has_ai
+    async def has_ai(self):
+        return any(
+            self.subscriptionClient.has_ai,
+            self.subscriptionExpert.has_ai
+        )
 
     @property
-    def has_screening(self):
-        return self.subscriptionClient.has_screening or self.subscriptionExpert.has_screening
+    async def has_screening(self):
+        return any(
+            self.subscriptionClient.has_screening,
+            self.subscriptionExpert.has_screening
+        )
 
     @property
-    def has_dyagnosis(self):
+    async def has_dyagnosis(self):
         return self.subscriptionExpert.has_dyagnosis
 
 
 class Diary(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="user")
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="id")
     theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
     has_health_attention = models.BooleanField(default=False)
     date_start = models.DateTimeField(default=timezone.now)

@@ -7,7 +7,7 @@ from .models import (
 
 
 @admin.register(User)
-class UniversityAdmin(admin.ModelAdmin):
+class UserAdmin(admin.ModelAdmin):
     pass
 
 

@@ -1,6 +1,5 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
-from django.utils.translation import gettext_lazy as _
 from django.db.utils import IntegrityError
 
 from .models import User, ClientProfile, ExpertProfile, StaffProfile
@@ -14,7 +13,7 @@ async def create_user_profile(sender, instance, created, **kwargs):
     elif instance.is_expert:
         profile_model = ExpertProfile
     try:
-        await profile_model.objects.acreate(user=instance)
+        await profile_model.objects.acreate(email=instance)
     except IntegrityError:
         pass
 
@@ -23,5 +22,5 @@ async def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ExpertProfile, dispatch_uid='expertProfile.delete_user')
 @receiver(post_delete, sender=StaffProfile, dispatch_uid='staffProfile.delete_user')
 async def delete_profile(sender, instance, **kwargs):
-    user = await User.objects.aget(id=instance.user_id)
+    user = await User.objects.aget(email=instance)
     await user.adelete()

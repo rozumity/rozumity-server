@@ -1,180 +1,151 @@
-from rest_framework.permissions import IsAdminUser
 from adrf.generics import (
-    ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+    ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView,
+    RetrieveUpdateDestroyAPIView
 )
 
-from rozumity.paginations import LimitOffsetPagination
-from rozumity.permissions import AuthReadStaffWritePermission
-from rozumity.mixins import (
-    AsyncCacheRetrieveDestroyMixin, AsyncCacheListMixin, 
-    AsyncCacheListCreateMixin, AsyncCacheRetrieveUpdateDestroyMixin
+from rozumity.mixins.caching_mixins import (
+    CacheRDMixin, CacheRUDMixin, CacheRUMixin, 
+    CacheLCMixin, CacheListMixin, 
 )
+from rozumity.permissions import StaffReadWritePermission
 
 from .models import *
 from .serializers import *
 
 
-class UserListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+class UserListView(
+    CacheListMixin, ListAPIView
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
-    pagination_class = LimitOffsetPagination
+    permission_classes = (StaffReadWritePermission,)
 
 
-class UserRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+class UserRetrieveUpdateView(
+    CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
+    permission_classes = (StaffReadWritePermission,)
 
 
 class UniversityListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class UniversityRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class SpecialityListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class SpecialityRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class EducationListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
-    queryset = Education.objects.select_related("university", "speciality").all()
+    queryset = Education.objects.select_related(
+        "university", "speciality"
+    ).all()
     serializer_class = EducationSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class EducationRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
-    queryset = Education.objects.select_related("university", "speciality").all()
+    queryset = Education.objects.select_related(
+        "university", "speciality"
+    ).all()
     serializer_class = EducationSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class ClientProfileListView(
-    AsyncCacheListMixin, ListCreateAPIView
+    CacheListMixin, ListAPIView
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
-class ClientProfileRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+class ClientProfileRetrieveUpdateView(
+    CacheRDMixin, RetrieveUpdateAPIView
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class ExpertProfileListView(
-    AsyncCacheListMixin, ListAPIView
+    CacheListMixin, ListAPIView
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
-class ExpertProfileRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+class ExpertProfileRetrieveUpdateView(
+    CacheRUDMixin, RetrieveUpdateAPIView
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class SubscriptionPlanListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class SubscriptionPlanRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class TherapyContractListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client", "expert", "subscriptionClient", "subscriptionExpert"
+        "client", "expert", "subscriptionClient", 
+        "subscriptionExpert"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class TherapyContractRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client", "expert", "subscriptionClient", "subscriptionExpert"
+        "client", "expert", "subscriptionClient", 
+        "subscriptionExpert"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
 
 
 class DiaryListCreateView(
-    AsyncCacheListCreateMixin, ListCreateAPIView
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = Diary.objects.select_related("client").all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (AuthReadStaffWritePermission,)
-    pagination_class = LimitOffsetPagination
 
 
 class DiaryRetrieveUpdateDestroyView(
-    AsyncCacheRetrieveUpdateDestroyMixin, 
-    RetrieveUpdateDestroyAPIView
+    CacheRUDMixin, RetrieveUpdateDestroyAPIView
 ):
     queryset = Diary.objects.select_related("client").all()
     serializer_class = DiarySerializer
-    permission_classes = (AuthReadStaffWritePermission,)

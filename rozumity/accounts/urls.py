@@ -7,12 +7,12 @@ app_name = 'accounts'
 urlpatterns = [
     path(
         "user/<int:pk>",
-        UserRetrieveUpdateDestroyView.as_view(),
+        UserRetrieveUpdateView.as_view(),
         name='user'
     ),
     path(
         "users/",
-        UserListCreateView.as_view(),
+        UserListView.as_view(),
         name='users'
     ),
     path(
@@ -47,7 +47,7 @@ urlpatterns = [
     ),
     path(
         "profile/client/<int:pk>",
-        ClientProfileRetrieveUpdateDestroyView.as_view(),
+        ClientProfileRetrieveUpdateView.as_view(),
         name='client-profile'
     ),
     path(
@@ -57,7 +57,7 @@ urlpatterns = [
     ),
     path(
         "profile/expert/<int:pk>",
-        ExpertProfileRetrieveUpdateDestroyView.as_view(),
+        ExpertProfileRetrieveUpdateView.as_view(),
         name='expert-profile'
     ),
     path(
@@ -75,13 +75,13 @@ urlpatterns = [
         SubscriptionPlanListCreateView.as_view(),
         name='subscriptions'
     ),
-    path(
-        "diary/<int:pk>",
-        DiaryRetrieveUpdateDestroyView.as_view(),
-        name='diary'),
-    path(
-        "diaries",
-        DiaryListCreateView.as_view(),
-        name='diaries'
-    )
+#    path(
+#        "diary/<int:pk>",
+#        DiaryRetrieveUpdateDestroyView.as_view(),
+#        name='diary'),
+#    path(
+#        "diaries",
+#        DiaryListCreateView.as_view(),
+#        name='diaries'
+#    )
 ]
