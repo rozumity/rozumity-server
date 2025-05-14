@@ -1,5 +1,8 @@
 from adrf.serializers import ModelSerializer
-from rest_framework.serializers import HyperlinkedIdentityField, EmailField
+from rest_framework.serializers import (
+    HyperlinkedIdentityField, EmailField, 
+    PrimaryKeyRelatedField
+)
 from django_countries.serializer_fields import CountryField
 
 from rozumity.mixins.serialization_mixins import CountryFieldMixin
@@ -53,7 +56,7 @@ class ClientProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ClientProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id", "email")
+        read_only_fields = ('date_birth', "id")
 
 
 class ExpertProfileSerializer(ProfileSerializerBase):
@@ -63,14 +66,14 @@ class ExpertProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id", "email")
+        read_only_fields = ('date_birth', "id")
 
 
 class StaffProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id", "email")
+        read_only_fields = ('date_birth', "id")
 
 # --- Profile
 # Subscription ---
@@ -83,10 +86,13 @@ class SubscriptionPlanSerializer(ModelSerializer):
 
 
 class TherapyContractSerializer(ModelSerializer):
-    client_email = EmailField()
-    expert_email = EmailField()
+    client_email = PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
+    expert_email = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all())
+    client_subscription_id = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
+    expert_subscription_id = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
+
     class Meta:
-        model = ExpertProfile
+        model = TherapyContract
         fields = "__all__"
         read_only_fields = ('client_email', 'expert_email', "date_start")
 

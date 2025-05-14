@@ -75,6 +75,21 @@ urlpatterns = [
         SubscriptionPlanListCreateView.as_view(),
         name='subscriptions'
     ),
+    path(
+        "contract/<int:pk>",
+        TherapyContractRetrieveUpdateView.as_view(),
+        name='contract'
+    ),
+    path(
+        "contracts",
+        TherapyContractCreateView.as_view(),
+        name='contract-create'
+    ),
+    path(
+        "contracts",
+        TherapyContractListView.as_view(),
+        name='contract-list'
+    ),
 #    path(
 #        "diary/<int:pk>",
 #        DiaryRetrieveUpdateDestroyView.as_view(),
