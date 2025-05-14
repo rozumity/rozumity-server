@@ -5,9 +5,10 @@ from adrf.generics import (
 
 from rozumity.mixins.caching_mixins import (
     CacheRDMixin, CacheRUDMixin, CacheRUMixin, 
-    CacheLCMixin, CacheListMixin, 
+    CacheLCMixin, CacheListMixin, CacheCreateMixin
 )
-from rozumity.permissions import StaffReadWritePermission
+from rozumity.permissions import *
+from accounts.permissions import IsContractSigner
 
 from .models import *
 from .serializers import *
@@ -18,7 +19,7 @@ class UserListView(
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (StaffReadWritePermission,)
+    permission_classes = (IsStaffPermission,)
 
 
 class UserRetrieveUpdateView(
@@ -26,7 +27,7 @@ class UserRetrieveUpdateView(
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (StaffReadWritePermission,)
+    permission_classes = (IsStaffPermission,)
 
 
 class UniversityListCreateView(
@@ -117,24 +118,37 @@ class SubscriptionPlanRetrieveUpdateDestroyView(
     serializer_class = SubscriptionPlanSerializer
 
 
-class TherapyContractListCreateView(
-    CacheLCMixin, ListCreateAPIView
+class TherapyContractListView(
+    CacheListMixin, ListAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client", "expert", "subscriptionClient", 
-        "subscriptionExpert"
+        "client_email", "expert_email", "client_subscription_id", 
+        "expert_subscription_id"
     ).all()
     serializer_class = TherapyContractSerializer
+    permission_classes = (IsStaffPermission,)
 
 
-class TherapyContractRetrieveUpdateDestroyView(
-    CacheRUDMixin, RetrieveUpdateDestroyAPIView
+class TherapyContractCreateView(
+    CacheCreateMixin, ListCreateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client", "expert", "subscriptionClient", 
-        "subscriptionExpert"
+        "client_email", "expert_email", "client_subscription_id", 
+        "expert_subscription_id"
     ).all()
     serializer_class = TherapyContractSerializer
+    permission_classes = (IsUserWritePermission,)
+
+
+class TherapyContractRetrieveUpdateView(
+    CacheRUMixin, RetrieveUpdateAPIView
+):
+    queryset = TherapyContract.objects.select_related(
+        "client_email", "expert_email", "client_subscription_id", 
+        "expert_subscription_id"
+    ).all()
+    serializer_class = TherapyContractSerializer
+    permission_classes = (IsStaffPermission|IsContractSigner,)
 
 
 class DiaryListCreateView(
