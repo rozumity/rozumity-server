@@ -1,4 +1,4 @@
-from uuid import uuid4
+import uuid
 from datetime import date, timedelta, timezone
 
 from django.db import models
@@ -12,7 +12,7 @@ from .managers import EmailUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid4, unique=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
     email = models.EmailField(_("email address"), unique=True, max_length=64)
     is_client = models.BooleanField(default=False)
     is_expert = models.BooleanField(default=False)
@@ -34,6 +34,90 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_staff(self):
         return self.is_superuser
+
+
+class AbstractProfile(models.Model):
+    class GenderChoices(models.IntegerChoices):
+        MALE = 0, _("Male")
+        FEMALE = 1, _("Female")
+        NONBINARY = 2, _("Non-binary")
+        TRANSGENDER = 3, _("Transgender")
+        INTERSEX = 4, _("Intersex")
+        HIDE = 5, _("Prefer not to say")
+
+    id = models.OneToOneField(
+        User, on_delete=models.CASCADE, help_text=_('User Email'), 
+        primary_key=True, to_field='email', editable=False
+    )
+
+    first_name = models.CharField(max_length=32, blank=True)
+    last_name = models.CharField(max_length=32, blank=True)
+    # PostgreSQL specific django_postgres_extensions
+    # Allows to select multiple genders at once, for example, intersex female
+    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), default=(5,), max_length=2, size=2)
+    gender = models.SmallIntegerField(choices=GenderChoices.choices, default=GenderChoices.HIDE)
+    country = CountryField(blank=True, blank_label="(Select country)")
+    date_birth = models.DateField(
+        default=date.today()-timedelta(days=18*365), blank=True, null=True
+    )
+
+    class Meta:
+        abstract=True
+
+    @property
+    async def email(self):
+        return self.id
+    
+    @property
+    async def name(self):
+        return f'{self.first_name} {self.last_name}'
+
+    @property
+    async def name_reversed(self):
+        return f'{self.last_name} {self.first_name}'
+
+    @property
+    async def age(self):
+        return (date.today() - self.date_birth).days / 365
+
+    @property
+    async def is_adult(self):
+        return True if self.age > 18 else False
+
+    @property
+    async def gender_verbose(self):
+        return self.get_gender_display()
+
+
+class ClientProfile(AbstractProfile):
+    class Meta:
+        verbose_name = _("Client's Profile")
+        verbose_name_plural = _("Clients' Profiles")
+
+    def __str__(self):
+        return str(self.email)
+
+
+class ExpertProfile(AbstractProfile):
+    education = models.ManyToManyField('Education', blank=True)
+    education_extra = models.TextField(max_length=500, blank=True)
+    countries_allowed = CountryField(multiple=True, blank=True, blank_label="(Select countries)")
+
+    class Meta:
+        verbose_name = _("Expert's Profile")
+        verbose_name_plural = _("Experts' Profiles")
+
+    def __str__(self):
+        return str(self.email)
+
+
+class StaffProfile(AbstractProfile):
+    class Meta:
+        verbose_name = _("Staff member's Profile")
+        verbose_name_plural = _("Staff members' Profiles")
+
+    def __str__(self):
+        return str(self.email)
 
 
 class Speciality(models.Model):
@@ -62,12 +146,16 @@ class University(models.Model):
 
 # TODO: possibility to upload or share a diploma or a certificate
 class Education(models.Model):
-    DEGREE_CHOICES = (
-        (0, _('course')), (1, _('undergraduate')), (2, _('specialist')), (3, _('master')), 
-        (4, _('postgraduate')), (5, _('doctor'))
-    )
+    class DegreeChoices(models.IntegerChoices):
+        COURSE = 0, _("Course")
+        UNDER = 1, _("Undergraduate")
+        SPEC = 2, _("Specialist")
+        MASTER = 3, _("Master")
+        POST = 4, _("Postgraduate")
+        DOC = 5, _("Doctor")
+
     university = models.ForeignKey(University, on_delete=models.PROTECT)
-    degree = models.SmallIntegerField(choices=DEGREE_CHOICES, default=0)
+    degree = models.SmallIntegerField(choices=DegreeChoices.choices, default=DegreeChoices.COURSE)
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
     date_start = models.DateField()
     date_end = models.DateField()
@@ -82,97 +170,19 @@ class Education(models.Model):
         return round(delta.days / 365)
 
 
-class AbstractProfile(models.Model):
-    id = models.UUIDField(
-        primary_key=True, default=uuid4, unique=True, editable=False
-    )
-    email = models.OneToOneField(
-        User, on_delete=models.CASCADE, help_text=_('User Email'), 
-        unique=True, to_field='email'
-    )
-    GENDER_CHOICES = (
-        (0, _('male')), (1, _('female')), (2, _('non-binary')), 
-        (3, _('transgender')), (4, _('intersex')), 
-        (5, _('prefer not to say'))
-    )
-
-    first_name = models.CharField(max_length=32, blank=True)
-    last_name = models.CharField(max_length=32, blank=True)
-    # PostgreSQL specific django_postgres_extensions
-    # Allows to select multiple genders at once, for example, intersex female
-    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), default=(5,), max_length=2, size=2)
-    gender = models.SmallIntegerField(choices=GENDER_CHOICES, default=5)
-    country = CountryField(blank=True, blank_label="(Select country)")
-    date_birth = models.DateField(
-        default=date.today()-timedelta(days=18*365), blank=True, null=True
-    )
-
-    class Meta:
-        abstract=True
-
-    @property
-    async def name(self):
-        return f'{self.first_name} {self.last_name}'
-
-    @property
-    async def name_reversed(self):
-        return f'{self.last_name} {self.first_name}'
-
-    @property
-    async def age(self):
-        return (date.today() - self.date_birth).days / 365
-
-    @property
-    async def is_adult(self):
-        return True if self.age > 18 else False
-
-    @property
-    async def gender_verbose(self):
-        genders = dict(self.GENDER_CHOICES)
-        return ', '.join([genders[gender] for gender in self.gender])
-
-    @property
-    async def gender_default(self):
-        return (5, _('prefer not to say'))
-
-
-class ClientProfile(AbstractProfile):
-    class Meta:
-        verbose_name = _("Client's Profile")
-        verbose_name_plural = _("Clients' Profiles")
-
-    def __str__(self):
-        return str(self.email)
-
-
-class ExpertProfile(AbstractProfile):
-    education = models.ManyToManyField(Education, blank=True)
-    education_extra = models.TextField(max_length=500, blank=True)
-    countries_allowed = CountryField(multiple=True, blank=True, blank_label="(Select countries)")
-
-    class Meta:
-        verbose_name = _("Expert's Profile")
-        verbose_name_plural = _("Experts' Profiles")
-
-    def __str__(self):
-        return str(self.email)
-
-
-class StaffProfile(AbstractProfile):
-    class Meta:
-        verbose_name = _("Staff member's Profile")
-        verbose_name_plural = _("Staff members' Profiles")
-
-    def __str__(self):
-        return str(self.email)
-
-
 class SubscriptionPlan(models.Model):
+    class OwnerTypes(models.IntegerChoices):
+        CLIENT = 0, _("Client")
+        EXPERT = 1, _("Expert")
+        BOTH = 2, _("Both")
+
     title = models.CharField(max_length=64)
     description = models.TextField(max_length=500)
     duration = models.DurationField()
     price = models.DecimalField(max_digits=6, decimal_places=2)
-    owner_type = models.SmallIntegerField(choices=((0, _('client')), (1, _('expert'))), default=0)
+    owner_type = models.SmallIntegerField(
+        choices=OwnerTypes.choices, default=OwnerTypes.BOTH
+    )
     has_diary = models.BooleanField(default=False)
     has_ai = models.BooleanField(default=False)
     has_screening = models.BooleanField(default=False)
@@ -183,23 +193,23 @@ class SubscriptionPlan(models.Model):
         verbose_name_plural = _("Subscription Plans")
 
     def __str__(self):
-        return f"{self.title} - {self.price} ({self.owner_type})"
+        return f"{self.title} - {self.price} ({self.get_owner_type_display()})"
 
 
 class TherapyContract(models.Model):
     client_email = models.ForeignKey(
         ClientProfile, on_delete=models.CASCADE, blank=True,
-        to_field='email', related_name="contract"
+        related_name="contract"
     )
     expert_email = models.ForeignKey(
         ExpertProfile, on_delete=models.CASCADE, blank=True,
-        to_field='email', related_name="contract"
+        related_name="contract"
     )
-    client_subscription = models.ForeignKey(
+    client_subscription_id = models.ForeignKey(
         SubscriptionPlan, on_delete=models.PROTECT, blank=True,
         related_name="client_contract"
     )
-    expert_subscription = models.ForeignKey(
+    expert_subscription_id = models.ForeignKey(
         SubscriptionPlan, on_delete=models.PROTECT, blank=True,
         related_name="expert_contract"
     )
@@ -210,7 +220,7 @@ class TherapyContract(models.Model):
         verbose_name_plural = _("Therapy Contracts")
 
     def __str__(self):
-        return f'{self.client} - {self.expert}'
+        return f'Contract | Client: {self.client_email}, Expert: {self.expert_email}'
 
     @property
     async def is_paid(self):
