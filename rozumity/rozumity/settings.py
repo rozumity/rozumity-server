@@ -155,7 +155,7 @@ CACHES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rozumity.permissions.AuthReadStaffWritePermission',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rozumity.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
@@ -166,10 +166,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rozumity.throttling.AnonRateAsyncThrottle',
-        'rozumity.throttling.UserRateAsyncThrottle'
-    ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '3000/day'
