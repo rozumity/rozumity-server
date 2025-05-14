@@ -6,29 +6,24 @@ app_name = 'accounts'
 
 urlpatterns = [
     path(
-        "user/<int:pk>",
-        UserRetrieveUpdateView.as_view(),
-        name='user'
-    ),
-    path(
         "users/",
         UserListView.as_view(),
         name='users'
     ),
     path(
-        "education/<int:pk>",
-        EducationRetrieveUpdateDestroyView.as_view(),
-        name='education'
+        "user/<int:pk>/",
+        UserRetrieveUpdateView.as_view(),
+        name='user'
     ),
     path(
-        "educations/",
+        "education/educations/",
         EducationListCreateView.as_view(),
         name='educations'
     ),
     path(
-        "education/university/<int:pk>",
-        UniversityRetrieveUpdateDestroyView.as_view(),
-        name='university'
+        "education/education/<int:pk>/",
+        EducationRetrieveUpdateDestroyView.as_view(),
+        name='education'
     ),
     path(
         "education/universities/",
@@ -36,7 +31,12 @@ urlpatterns = [
         name='universities'
     ),
     path(
-        "education/speciality/<int:pk>",
+        "education/university/<int:pk>/",
+        UniversityRetrieveUpdateDestroyView.as_view(),
+        name='university'
+    ),
+    path(
+        "education/speciality/<int:pk>/",
         SpecialityRetrieveUpdateDestroyView.as_view(),
         name='speciality'
     ),
@@ -46,57 +46,43 @@ urlpatterns = [
         name='speciality'
     ),
     path(
-        "profile/client/<int:pk>",
-        ClientProfileRetrieveUpdateView.as_view(),
-        name='client-profile'
-    ),
-    path(
-        "profile/clients",
+        "profile/clients/",
         ClientProfileListView.as_view(),
         name='client-profiles'
     ),
     path(
-        "profile/expert/<int:pk>",
-        ExpertProfileRetrieveUpdateView.as_view(),
-        name='expert-profile'
+        "profile/client/<str:pk>/",
+        ClientProfileRetrieveUpdateView.as_view(),
+        name='client-profile'
     ),
     path(
-        "profile/experts",
+        "profile/experts/",
         ExpertProfileListView.as_view(),
         name='expert-profiles'
     ),
     path(
-        "subscription/<int:pk>",
-        SubscriptionPlanRetrieveUpdateDestroyView.as_view(),
-        name='subscription'
+        "profile/expert/<slug:pk>/",
+        ExpertProfileRetrieveUpdateView.as_view(),
+        name='expert-profile'
     ),
     path(
-        "subscriptions",
+        "subscriptions/",
         SubscriptionPlanListCreateView.as_view(),
         name='subscriptions'
     ),
     path(
-        "contract/<int:pk>",
+        "subscription/<int:pk>/",
+        SubscriptionPlanRetrieveUpdateDestroyView.as_view(),
+        name='subscription'
+    ),
+    path(
+        "contracts/",
+        TherapyContractCreateListView.as_view(),
+        name='contracts'
+    ),
+    path(
+        "contract/<int:pk>/",
         TherapyContractRetrieveUpdateView.as_view(),
         name='contract'
-    ),
-    path(
-        "contracts",
-        TherapyContractCreateView.as_view(),
-        name='contract-create'
-    ),
-    path(
-        "contracts",
-        TherapyContractListView.as_view(),
-        name='contract-list'
-    ),
-#    path(
-#        "diary/<int:pk>",
-#        DiaryRetrieveUpdateDestroyView.as_view(),
-#        name='diary'),
-#    path(
-#        "diaries",
-#        DiaryListCreateView.as_view(),
-#        name='diaries'
-#    )
+    )
 ]
