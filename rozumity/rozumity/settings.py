@@ -165,7 +165,15 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rozumity.throttling.AnonRateAsyncThrottle',
+        'rozumity.throttling.UserRateAsyncThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '3000/day'
+    }
 }
 
 SPECTACULAR_SETTINGS = {

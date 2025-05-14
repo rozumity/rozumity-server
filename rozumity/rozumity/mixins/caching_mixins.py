@@ -7,7 +7,7 @@ from rest_framework.response import Response
 class CacheMixinBase:
     async def _generate_cache_key(self, request=None):
         cache_key = request.get_full_path() if request else self.__class__.__name__.lower()
-        self.cache_key = md5(cache_key.encode("utf-8")).hexdigest()
+        self.cache_key = md5(cache_key.encode()).hexdigest()
         return self.cache_key
 
 
