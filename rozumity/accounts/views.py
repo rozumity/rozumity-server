@@ -10,7 +10,8 @@ from rozumity.mixins.caching_mixins import (
 )
 from rozumity.permissions import *
 from accounts.permissions import (
-    IsContractSignerPermission, IsProfileOwnerPermission, IsStaffReadPermission
+    IsContractSignerPermission, 
+    IsProfileOwnerPermission
 )
 
 from .models import *

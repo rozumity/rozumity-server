@@ -31,6 +31,15 @@ class IsUserWritePermission(BasePermission):
         ))
 
 
+class IsStaffReadPermission(BasePermission):
+    async def has_permission(self, request, view):
+        return all((
+            request.user.is_authenticated,
+            request.user.is_staff,
+            request.method == 'GET'
+        ))
+
+
 class AuthReadStaffWritePermission(BasePermission):
     async def has_permission(self, request, view):
         return all((
