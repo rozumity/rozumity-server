@@ -1,7 +1,7 @@
 from adrf.serializers import ModelSerializer
 from rest_framework.serializers import (
     HyperlinkedIdentityField, EmailField, 
-    PrimaryKeyRelatedField
+    PrimaryKeyRelatedField, CharField
 )
 from django_countries.serializer_fields import CountryField
 
@@ -49,7 +49,7 @@ class UserSerializer(ModelSerializer):
 
 class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
     country = CountryField()
-    email = EmailField()
+    gender = CharField(source='get_gender_display')
 
 
 class ClientProfileSerializer(ProfileSerializerBase):
