@@ -15,6 +15,14 @@ class IsUserReadPermission(BasePermission):
         ))
 
 
+class IsUserEditPermission(BasePermission):
+    async def has_permission(self, request, view):
+        return all((
+            request.user.is_authenticated, 
+            request.method in ["PATCH", "PUT"]
+        ))
+
+
 class IsUserWritePermission(BasePermission):
     async def has_permission(self, request, view):
         return all((
