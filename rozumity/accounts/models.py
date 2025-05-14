@@ -65,8 +65,15 @@ class AbstractProfile(models.Model):
         abstract=True
 
     @property
-    async def email(self):
-        return self.id
+    def email(self):
+        return self.id_id
+
+    @property
+    async def email_async(self):
+        return self.id_id
+
+    def __str__(self):
+        return str(self.email)
     
     @property
     async def name(self):
@@ -94,9 +101,6 @@ class ClientProfile(AbstractProfile):
         verbose_name = _("Client's Profile")
         verbose_name_plural = _("Clients' Profiles")
 
-    def __str__(self):
-        return str(self.email)
-
 
 class ExpertProfile(AbstractProfile):
     education = models.ManyToManyField('Education', blank=True)
@@ -107,17 +111,11 @@ class ExpertProfile(AbstractProfile):
         verbose_name = _("Expert's Profile")
         verbose_name_plural = _("Experts' Profiles")
 
-    def __str__(self):
-        return str(self.email)
-
 
 class StaffProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Staff member's Profile")
         verbose_name_plural = _("Staff members' Profiles")
-
-    def __str__(self):
-        return str(self.email)
 
 
 class Speciality(models.Model):
