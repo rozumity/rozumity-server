@@ -2,13 +2,16 @@ from adrf.generics import (
     ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView,
     RetrieveUpdateDestroyAPIView
 )
+from rozumity.throttling import UserRateAsyncThrottle, AnonRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    CacheRDMixin, CacheRUDMixin, CacheRUMixin, 
-    CacheLCMixin, CacheListMixin, CacheCreateMixin
+    CacheRUDMixin, CacheRUMixin, 
+    CacheLCMixin, CacheListMixin
 )
 from rozumity.permissions import *
-from accounts.permissions import IsContractSigner
+from accounts.permissions import (
+    IsContractSignerPermission, IsProfileOwnerPermission, IsStaffReadPermission
+)
 
 from .models import *
 from .serializers import *
@@ -35,6 +38,7 @@ class UniversityListCreateView(
 ):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class UniversityRetrieveUpdateDestroyView(
@@ -42,6 +46,7 @@ class UniversityRetrieveUpdateDestroyView(
 ):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class SpecialityListCreateView(
@@ -49,6 +54,7 @@ class SpecialityListCreateView(
 ):
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class SpecialityRetrieveUpdateDestroyView(
@@ -56,6 +62,7 @@ class SpecialityRetrieveUpdateDestroyView(
 ):
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class EducationListCreateView(
@@ -65,6 +72,7 @@ class EducationListCreateView(
         "university", "speciality"
     ).all()
     serializer_class = EducationSerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class EducationRetrieveUpdateDestroyView(
@@ -74,6 +82,7 @@ class EducationRetrieveUpdateDestroyView(
         "university", "speciality"
     ).all()
     serializer_class = EducationSerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class ClientProfileListView(
@@ -81,13 +90,15 @@ class ClientProfileListView(
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
+    permission_classes = (IsStaffPermission,)
 
 
 class ClientProfileRetrieveUpdateView(
-    CacheRDMixin, RetrieveUpdateAPIView
+    CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
+    permission_classes = (IsStaffPermission|IsProfileOwnerPermission,)
 
 
 class ExpertProfileListView(
@@ -95,13 +106,15 @@ class ExpertProfileListView(
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
+    permission_classes = (IsStaffPermission,)
 
 
 class ExpertProfileRetrieveUpdateView(
-    CacheRUDMixin, RetrieveUpdateAPIView
+    CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
+    permission_classes = (IsStaffPermission|IsProfileOwnerPermission,)
 
 
 class SubscriptionPlanListCreateView(
@@ -109,6 +122,7 @@ class SubscriptionPlanListCreateView(
 ):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
 class SubscriptionPlanRetrieveUpdateDestroyView(
@@ -116,28 +130,18 @@ class SubscriptionPlanRetrieveUpdateDestroyView(
 ):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
+    throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
 
 
-class TherapyContractListView(
-    CacheListMixin, ListAPIView
+class TherapyContractCreateListView(
+    CacheLCMixin, ListCreateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
         "client_email", "expert_email", "client_subscription_id", 
         "expert_subscription_id"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (IsStaffPermission,)
-
-
-class TherapyContractCreateView(
-    CacheCreateMixin, ListCreateAPIView
-):
-    queryset = TherapyContract.objects.select_related(
-        "client_email", "expert_email", "client_subscription_id", 
-        "expert_subscription_id"
-    ).all()
-    serializer_class = TherapyContractSerializer
-    permission_classes = (IsUserWritePermission,)
+    permission_classes = (IsStaffReadPermission|IsUserWritePermission,)
 
 
 class TherapyContractRetrieveUpdateView(
@@ -148,7 +152,7 @@ class TherapyContractRetrieveUpdateView(
         "expert_subscription_id"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (IsStaffPermission|IsContractSigner,)
+    permission_classes = (IsStaffPermission|IsContractSignerPermission,)
 
 
 class DiaryListCreateView(
