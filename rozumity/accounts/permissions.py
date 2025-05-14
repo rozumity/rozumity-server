@@ -27,15 +27,6 @@ class IsUserReadPermission(permissions.BasePermission):
         ))
 
 
-class IsStaffReadPermission(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        return all((
-            request.user.is_authenticated,
-            request.user.is_staff,
-            request.method == 'GET'
-        ))
-
-
 class HasDiaryPermission(AuthReadStaffWritePermission):
     async def has_permission(self, request, view):
         has_diary_perm = False
