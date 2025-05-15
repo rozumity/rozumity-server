@@ -1,33 +1,19 @@
 
 from rest_framework import permissions
-from rozumity.permissions import AuthReadStaffWritePermission
 from accounts.models import TherapyContract
 
 
-class IsContractSignerPermission(permissions.BasePermission):
+class IsContractSigner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.email in (obj.client_email, obj.expert_email)
 
 
-class IsProfileOwnerPermission(permissions.BasePermission):
+class IsProfileOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.email == obj.email
 
 
-class IsStaffPermission(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        return request.user.is_staff
-
-
-class IsUserReadPermission(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        return all((
-            request.user.is_authenticated, 
-            request.method == 'GET'
-        ))
-
-
-class HasDiaryPermission(AuthReadStaffWritePermission):
+class HasDiaryPermission(permissions.BasePermission):
     async def has_permission(self, request, view):
         has_diary_perm = False
         user = request.user

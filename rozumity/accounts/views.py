@@ -2,7 +2,10 @@ from adrf.generics import (
     ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView,
     RetrieveUpdateDestroyAPIView
 )
-from rozumity.throttling import UserRateAsyncThrottle, AnonRateAsyncThrottle
+from rest_framework.permissions import IsAdminUser
+from rozumity.throttling import (
+    UserRateAsyncThrottle, AnonRateAsyncThrottle
+)
 
 from rozumity.mixins.caching_mixins import (
     CacheRUDMixin, CacheRUMixin, 
@@ -10,8 +13,7 @@ from rozumity.mixins.caching_mixins import (
 )
 from rozumity.permissions import *
 from accounts.permissions import (
-    IsContractSignerPermission, 
-    IsProfileOwnerPermission
+    IsContractSigner, IsProfileOwner
 )
 
 from .models import *
@@ -23,7 +25,7 @@ class UserListView(
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsStaffPermission,)
+    permission_classes = (IsAdmin,)
 
 
 class UserRetrieveUpdateView(
@@ -31,7 +33,7 @@ class UserRetrieveUpdateView(
 ):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsStaffPermission,)
+    permission_classes = (IsAdmin,)
 
 
 class UniversityListCreateView(
@@ -40,6 +42,7 @@ class UniversityListCreateView(
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsAdminCreateUserList,)
 
 
 class UniversityRetrieveUpdateDestroyView(
@@ -48,6 +51,7 @@ class UniversityRetrieveUpdateDestroyView(
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsAdminUpdateDeleteUserRead,)
 
 
 class SpecialityListCreateView(
@@ -56,6 +60,7 @@ class SpecialityListCreateView(
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsAdminCreateUserList,)
 
 
 class SpecialityRetrieveUpdateDestroyView(
@@ -64,6 +69,7 @@ class SpecialityRetrieveUpdateDestroyView(
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsUser,)
 
 
 class EducationListCreateView(
@@ -74,6 +80,7 @@ class EducationListCreateView(
     ).all()
     serializer_class = EducationSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsUser,)
 
 
 class EducationRetrieveUpdateDestroyView(
@@ -84,6 +91,7 @@ class EducationRetrieveUpdateDestroyView(
     ).all()
     serializer_class = EducationSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsUser,)
 
 
 class ClientProfileListView(
@@ -91,7 +99,7 @@ class ClientProfileListView(
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
-    permission_classes = (IsStaffPermission,)
+    permission_classes = (IsAdmin,)
 
 
 class ClientProfileRetrieveUpdateView(
@@ -99,7 +107,7 @@ class ClientProfileRetrieveUpdateView(
 ):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
-    permission_classes = (IsStaffPermission|IsProfileOwnerPermission,)
+    permission_classes = (IsAdminUser|IsProfileOwner,)
 
 
 class ExpertProfileListView(
@@ -107,7 +115,7 @@ class ExpertProfileListView(
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
-    permission_classes = (IsStaffPermission,)
+    permission_classes = (IsAdmin,)
 
 
 class ExpertProfileRetrieveUpdateView(
@@ -115,7 +123,7 @@ class ExpertProfileRetrieveUpdateView(
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
-    permission_classes = (IsStaffPermission|IsProfileOwnerPermission,)
+    permission_classes = (IsAdminUser|IsProfileOwner,)
 
 
 class SubscriptionPlanListCreateView(
@@ -124,6 +132,7 @@ class SubscriptionPlanListCreateView(
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsUser,)
 
 
 class SubscriptionPlanRetrieveUpdateDestroyView(
@@ -132,28 +141,27 @@ class SubscriptionPlanRetrieveUpdateDestroyView(
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
+    permission_classes = (IsUser,)
 
 
 class TherapyContractCreateListView(
     CacheLCMixin, ListCreateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client_email", "expert_email", "client_subscription_id", 
-        "expert_subscription_id"
+        "client_email", "expert_email", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (IsStaffReadPermission|IsUserWritePermission,)
+    permission_classes = (IsAdminListUserCreate,)
 
 
 class TherapyContractRetrieveUpdateView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client_email", "expert_email", "client_subscription_id", 
-        "expert_subscription_id"
+        "client_email", "expert_email", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
-    permission_classes = (IsStaffPermission|IsContractSignerPermission,)
+    permission_classes = (IsAdminUser|IsContractSigner,)
 
 
 class DiaryListCreateView(
