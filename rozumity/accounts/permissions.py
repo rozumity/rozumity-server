@@ -1,16 +1,30 @@
 
 from rest_framework import permissions
+
 from accounts.models import TherapyContract
+from accounts.utils import get_profile
+
+
+class IsAdminListCreateExpertCreate(permissions.BasePermission):
+    async def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_staff:
+            return True
+        profile = await get_profile(request)
+        return request.method == "POST" and "expert" in profile.__class__.__name__.lower()
 
 
 class IsContractSigner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return request.user.email in (obj.client_email, obj.expert_email)
+        if request.user.is_authenticated:
+            return request.user.email in (obj.client_id, obj.expert_id)
 
 
 class IsProfileOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return request.user.email == obj.email
+        if request.user.is_authenticated:
+            return request.user.email == obj.email
 
 
 class HasDiaryPermission(permissions.BasePermission):
@@ -26,6 +40,9 @@ class HasDiaryPermission(permissions.BasePermission):
                 break
         return has_diary_perm
 
+#        profile = await get_profile(request)
+#        async for contract in profile.contract.all():
+#            if (await contract.is_active and await contract.has_ai):
 
 class HasAIPermission(permissions.BasePermission):
     async def has_permission(self, request, view):
