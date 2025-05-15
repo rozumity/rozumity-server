@@ -19,7 +19,7 @@ class CacheListMixin(CacheMixinBase):
         if not await cache.ahas_key(cache_key_page):
             resp = await self.alist(request, *args, **kwargs)
             data_ids, cached_data= [], {}
-            id_name = self.custom_id if hasattr(self, 'custom_id') else "id"
+            id_name = self.serializer_class.custom_id if hasattr(self.serializer_class, "custom_id") else "id"
             for item in resp.data["results"]:
                 try:
                     cache_key_id = f"{cache_key}:{item[id_name]}"
@@ -49,7 +49,7 @@ class CacheListMixin(CacheMixinBase):
 class CacheCreateMixin(CacheMixinBase):
     async def post(self, request, *args, **kwargs):
         resp = await self.acreate(request, *args, **kwargs)
-        id_name = self.custom_id if hasattr(self, 'custom_id') else "id"
+        id_name = self.serializer_class.custom_id if hasattr(self.serializer_class, "custom_id") else "id"
         try:
             cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
         except KeyError as e:
@@ -60,7 +60,7 @@ class CacheCreateMixin(CacheMixinBase):
 
 class CacheRetrieveMixin(CacheMixinBase):
     async def get(self, request, *args, **kwargs):
-        cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"
+        cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key))
         else:
@@ -71,13 +71,13 @@ class CacheRetrieveMixin(CacheMixinBase):
 
 class CacheUpdateMixin(CacheMixinBase):
     async def patch(self, request, *args, **kwargs):
-        cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"
+        cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         resp = await sync_to_async(self.partial_update)(request, *args, **kwargs)
         await cache.aset(cache_key, resp.data)
         return resp
 
     async def put(self, request, *args, **kwargs):
-        cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"
+        cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         resp = await self.aupdate(request, *args, **kwargs)
         await cache.aset(cache_key, resp.data)
         return resp
@@ -85,7 +85,7 @@ class CacheUpdateMixin(CacheMixinBase):
 
 class CacheDestroyMixin(CacheMixinBase):
     async def delete(self, request, *args, **kwargs):
-        cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"
+        cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         resp = await self.adestroy(request, *args, **kwargs)
         if await cache.ahas_key(cache_key):
             await cache.adelete(cache_key, resp.data)
