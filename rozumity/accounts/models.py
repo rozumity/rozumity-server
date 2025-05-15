@@ -100,6 +100,7 @@ class ClientProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Client's Profile")
         verbose_name_plural = _("Clients' Profiles")
+        default_related_name = 'clientprofile'
 
 
 class ExpertProfile(AbstractProfile):
@@ -110,6 +111,7 @@ class ExpertProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Expert's Profile")
         verbose_name_plural = _("Experts' Profiles")
+        default_related_name = 'expertprofile'
 
 
 class StaffProfile(AbstractProfile):
@@ -121,6 +123,7 @@ class StaffProfile(AbstractProfile):
 class Speciality(models.Model):
     code = models.SmallIntegerField()
     title = models.CharField(max_length=128)
+    is_medical = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = _('Speciality')
@@ -157,6 +160,7 @@ class Education(models.Model):
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
     date_start = models.DateField()
     date_end = models.DateField()
+    is_medical = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = _("Education")
@@ -203,11 +207,11 @@ class TherapyContract(models.Model):
         ExpertProfile, on_delete=models.CASCADE, blank=True,
         related_name="contract"
     )
-    client_subscription_id = models.ForeignKey(
+    client_plan = models.ForeignKey(
         SubscriptionPlan, on_delete=models.PROTECT, blank=True,
         related_name="client_contract"
     )
-    expert_subscription_id = models.ForeignKey(
+    expert_plan = models.ForeignKey(
         SubscriptionPlan, on_delete=models.PROTECT, blank=True,
         related_name="expert_contract"
     )
