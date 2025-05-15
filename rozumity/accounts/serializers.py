@@ -88,8 +88,8 @@ class SubscriptionPlanSerializer(ModelSerializer):
 class TherapyContractSerializer(ModelSerializer):
     client_email = PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
     expert_email = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all())
-    client_subscription_id = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
-    expert_subscription_id = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
+    client_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
+    expert_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
 
     class Meta:
         model = TherapyContract
