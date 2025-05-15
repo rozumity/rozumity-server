@@ -11,7 +11,7 @@ urlpatterns = [
         name='users'
     ),
     path(
-        "user/<int:pk>/",
+        "user/<uuid:pk>/",
         UserRetrieveUpdateView.as_view(),
         name='user'
     ),
