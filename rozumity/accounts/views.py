@@ -13,7 +13,8 @@ from rozumity.mixins.caching_mixins import (
 )
 from rozumity.permissions import *
 from accounts.permissions import (
-    IsContractSigner, IsProfileOwner
+    IsContractSigner, IsProfileOwner, 
+    IsAdminListCreateExpertCreate
 )
 
 from .models import *
@@ -69,7 +70,7 @@ class SpecialityRetrieveUpdateDestroyView(
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
-    permission_classes = (IsUser,)
+    permission_classes = (IsAdminUpdateDeleteUserRead,)
 
 
 class EducationListCreateView(
@@ -80,7 +81,7 @@ class EducationListCreateView(
     ).all()
     serializer_class = EducationSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
-    permission_classes = (IsUser,)
+    permission_classes = (IsAdminListCreateExpertCreate,)
 
 
 class EducationRetrieveUpdateDestroyView(
@@ -91,7 +92,7 @@ class EducationRetrieveUpdateDestroyView(
     ).all()
     serializer_class = EducationSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
-    permission_classes = (IsUser,)
+    permission_classes = (IsAdminUpdateDeleteUserRead,)
 
 
 class ClientProfileListView(
@@ -132,7 +133,7 @@ class SubscriptionPlanListCreateView(
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
-    permission_classes = (IsUser,)
+    permission_classes = (IsAdminCreateUserList,)
 
 
 class SubscriptionPlanRetrieveUpdateDestroyView(
@@ -141,14 +142,14 @@ class SubscriptionPlanRetrieveUpdateDestroyView(
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
     throttle_classes = (AnonRateAsyncThrottle, UserRateAsyncThrottle)
-    permission_classes = (IsUser,)
+    permission_classes = (IsAdminUpdateDeleteUserRead,)
 
 
 class TherapyContractCreateListView(
     CacheLCMixin, ListCreateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client_email", "expert_email", "client_plan", "expert_plan"
+        "client", "expert", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
     permission_classes = (IsAdminListUserCreate,)
@@ -158,7 +159,7 @@ class TherapyContractRetrieveUpdateView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = TherapyContract.objects.select_related(
-        "client_email", "expert_email", "client_plan", "expert_plan"
+        "client", "expert", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
     permission_classes = (IsAdminUser|IsContractSigner,)
