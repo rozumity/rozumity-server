@@ -17,16 +17,17 @@ class CacheListMixin(CacheMixinBase):
         cache_key = await self._generate_cache_key()
 
         if not await cache.ahas_key(cache_key_page):
-            resp = await sync_to_async(self.list)(request, *args, **kwargs)
-            data_ids, cached_data = [], {}
+            resp = await self.alist(request, *args, **kwargs)
+            data_ids, cached_data= [], {}
+            id_name = self.custom_id if hasattr(self, 'custom_id') else "id"
             for item in resp.data["results"]:
                 try:
-                    cache_key_id = f"{cache_key}:{item['id']}"
+                    cache_key_id = f"{cache_key}:{item[id_name]}"
                 except KeyError as e:
-                    raise KeyError("Please specify the id field in the serializer")
+                    raise KeyError("Please specify the custom_id")
                 if not await cache.ahas_key(cache_key_id):
                     cached_data[cache_key_id] = item
-                data_ids.append(item['id'])
+                data_ids.append(item[id_name])
             cached_data[cache_key_page] = data_ids
             await cache.aset_many(cached_data, 100, None)
             return resp
@@ -48,7 +49,11 @@ class CacheListMixin(CacheMixinBase):
 class CacheCreateMixin(CacheMixinBase):
     async def post(self, request, *args, **kwargs):
         resp = await self.acreate(request, *args, **kwargs)
-        cache_key = f"{await self._generate_cache_key()}:{resp.data['id']}"
+        id_name = self.custom_id if hasattr(self, 'custom_id') else "id"
+        try:
+            cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
+        except KeyError as e:
+            raise KeyError("Please specify the custom_id")
         await cache.aset(cache_key, resp.data)
         return resp
 
