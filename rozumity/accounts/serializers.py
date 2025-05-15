@@ -27,13 +27,14 @@ class UniversitySerializer(CountryFieldMixin, ModelSerializer):
 
 
 class EducationSerializer(ModelSerializer):
-    university = PrimaryKeyRelatedField(queryset=University.objects.all())
-    speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all())
+    university = UniversitySerializer()
+    speciality = SpecialitySerializer()
+    degree = CharField(source='get_degree_display')
 
     class Meta:
         model = Education
         fields = "__all__"
-        read_only_fields = ('university', "speciality")
+        read_only_fields = ('id','university', "speciality")
 
 # Education ---
 # --- Profile
@@ -48,6 +49,9 @@ class UserSerializer(ModelSerializer):
 
 
 class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
+    email = PrimaryKeyRelatedField(
+        queryset=User.objects.select_related('clientprofile','expertprofile').all()
+    )
     country = CountryField()
     gender = CharField(source='get_gender_display')
     custom_id = "email"
@@ -60,8 +64,23 @@ class ClientProfileSerializer(ProfileSerializerBase):
         read_only_fields = ('date_birth', "email")
 
 
-class ExpertProfileSerializer(ProfileSerializerBase):
+class ExpertProfileReadSerializer(ProfileSerializerBase):
     education = EducationSerializer(many=True)
+    countries_allowed = CountryField()
+
+    class Meta:
+        model = ExpertProfile
+        fields = "__all__"
+        read_only_fields = ('date_birth', "email")
+
+
+class ExpertProfileWriteSerializer(ProfileSerializerBase):
+    education = PrimaryKeyRelatedField(
+        queryset=Education.objects.select_related(
+            'university','speciality'
+        ).all(), 
+        many=True
+    )
     countries_allowed = CountryField()
 
     class Meta:
@@ -80,6 +99,8 @@ class StaffProfileSerializer(ProfileSerializerBase):
 # Subscription ---
 
 class SubscriptionPlanSerializer(ModelSerializer):
+    owner_type = CharField(source='get_owner_type_display')
+
     class Meta:
         model = SubscriptionPlan
         fields = "__all__"

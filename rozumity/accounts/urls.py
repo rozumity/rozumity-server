@@ -12,7 +12,7 @@ urlpatterns = [
     ),
     path(
         "user/<uuid:pk>/",
-        UserRetrieveUpdateView.as_view(),
+        UserRetrieveView.as_view(),
         name='user'
     ),
     path(
@@ -27,28 +27,23 @@ urlpatterns = [
     ),
     path(
         "education/universities/",
-        UniversityListCreateView.as_view(),
+        UniversityListView.as_view(),
         name='universities'
     ),
     path(
         "education/university/<int:pk>/",
-        UniversityRetrieveUpdateDestroyView.as_view(),
+        UniversityRetrieveView.as_view(),
         name='university'
     ),
     path(
         "education/speciality/<int:pk>/",
-        SpecialityRetrieveUpdateDestroyView.as_view(),
+        SpecialityRetrieveView.as_view(),
         name='speciality'
     ),
     path(
         "education/specialities/",
-        SpecialityListCreateView.as_view(),
+        SpecialityListView.as_view(),
         name='speciality'
-    ),
-    path(
-        "profile/clients/",
-        ClientProfileListView.as_view(),
-        name='client-profiles'
     ),
     path(
         "profile/client/<str:pk>/",
@@ -56,23 +51,18 @@ urlpatterns = [
         name='client-profile'
     ),
     path(
-        "profile/experts/",
-        ExpertProfileListView.as_view(),
-        name='expert-profiles'
-    ),
-    path(
-        "profile/expert/<slug:pk>/",
+        "profile/expert/<str:pk>/",
         ExpertProfileRetrieveUpdateView.as_view(),
         name='expert-profile'
     ),
     path(
         "subscriptions/",
-        SubscriptionPlanListCreateView.as_view(),
+        SubscriptionPlanListView.as_view(),
         name='subscriptions'
     ),
     path(
         "subscription/<int:pk>/",
-        SubscriptionPlanRetrieveUpdateDestroyView.as_view(),
+        SubscriptionPlanRetrieveView.as_view(),
         name='subscription'
     ),
     path(
