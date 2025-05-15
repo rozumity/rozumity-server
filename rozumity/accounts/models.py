@@ -104,8 +104,11 @@ class ClientProfile(AbstractProfile):
 
 class ExpertProfile(AbstractProfile):
     education = models.ManyToManyField('Education', blank=True)
-    education_extra = models.TextField(max_length=500, blank=True)
-    countries_allowed = CountryField(multiple=True, blank=True, blank_label="(Select countries)")
+    education_extra = models.TextField(max_length=500, default="")
+    countries_allowed = CountryField(
+        multiple=True, blank=True, 
+        blank_label=_("Select countries")
+    )
 
     class Meta:
         verbose_name = _("Expert's Profile")
