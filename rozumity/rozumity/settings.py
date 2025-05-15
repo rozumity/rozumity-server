@@ -14,6 +14,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -177,4 +178,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Rozumity is an advanced psychological instrument with AI features',
     'VERSION': '1.0.1',
     'SERVE_INCLUDE_SCHEMA': False
+}
+
+ # DEV ONLY
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=300)
 }
