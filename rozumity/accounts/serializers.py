@@ -56,7 +56,7 @@ class ClientProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ClientProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id")
+        read_only_fields = ('date_birth', "email")
 
 
 class ExpertProfileSerializer(ProfileSerializerBase):
@@ -66,7 +66,7 @@ class ExpertProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id")
+        read_only_fields = ('date_birth', "email")
 
 
 class StaffProfileSerializer(ProfileSerializerBase):

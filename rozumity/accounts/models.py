@@ -45,11 +45,10 @@ class AbstractProfile(models.Model):
         INTERSEX = 4, _("Intersex")
         HIDE = 5, _("Prefer not to say")
 
-    id = models.OneToOneField(
+    email = models.OneToOneField(
         User, on_delete=models.CASCADE, help_text=_('User Email'), 
         primary_key=True, to_field='email', editable=False
     )
-
     first_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
     # PostgreSQL specific django_postgres_extensions
@@ -64,16 +63,12 @@ class AbstractProfile(models.Model):
     class Meta:
         abstract=True
 
-    @property
-    def email(self):
-        return self.id_id
-
-    @property
-    async def email_async(self):
-        return self.id_id
-
     def __str__(self):
         return str(self.email)
+
+    @property
+    def id(self):
+        return self.email.id
     
     @property
     async def name(self):
@@ -296,7 +291,7 @@ class TherapyContract(models.Model):
 
 
 class Diary(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="id")
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="email")
     theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
     has_health_attention = models.BooleanField(default=False)
     date_start = models.DateTimeField(default=timezone.now)
