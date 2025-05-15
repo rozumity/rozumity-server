@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django_filters',
     'django_countries',
     'drf_spectacular',
+    'djmoney',
     'rozumity',
     'accounts'
 ]
@@ -184,3 +185,6 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=300)
 }
+
+CURRENCIES = ('USD', 'EUR', 'UAH')
+SERIALIZATION_MODULES = {"json": "djmoney.serializers"}
