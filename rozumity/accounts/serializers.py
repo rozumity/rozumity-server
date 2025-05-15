@@ -27,8 +27,8 @@ class UniversitySerializer(CountryFieldMixin, ModelSerializer):
 
 
 class EducationSerializer(ModelSerializer):
-    university = UniversitySerializer()
-    speciality = SpecialitySerializer()
+    university = PrimaryKeyRelatedField(queryset=University.objects.all())
+    speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all())
 
     class Meta:
         model = Education
@@ -86,15 +86,15 @@ class SubscriptionPlanSerializer(ModelSerializer):
 
 
 class TherapyContractSerializer(ModelSerializer):
-    client_email = PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
-    expert_email = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all())
-    client_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
-    expert_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all())
+    client = PrimaryKeyRelatedField(queryset=ClientProfile.objects.all(), required=False)
+    expert = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all(), required=False)
+    client_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all(), required=False)
+    expert_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all(), required=False)
 
     class Meta:
         model = TherapyContract
         fields = "__all__"
-        read_only_fields = ('client_email', 'expert_email', "date_start")
+        read_only_fields = ('client', 'expert', "contract_start_date")
 
 # --- Subscription
 # --- Diary
