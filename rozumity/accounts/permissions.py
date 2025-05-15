@@ -15,6 +15,17 @@ class IsAdminListCreateExpertCreate(permissions.BasePermission):
         return request.method == "POST" and "expert" in profile.__class__.__name__.lower()
 
 
+class IsExpert(permissions.BasePermission):
+    async def has_permission(self, request, view):
+        if request.user.is_authenticated and request.user.is_staff:
+            return True
+        elif request.user.is_authenticated:
+            profile = await get_profile(request)
+            return "expert" in profile.__class__.__name__.lower()
+        else:
+            return False
+
+
 class IsContractSigner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
@@ -22,9 +33,24 @@ class IsContractSigner(permissions.BasePermission):
 
 
 class IsProfileOwner(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_authenticated:
-            return request.user.email == obj.email
+    async def has_permission(self, request, view):
+        if request.user.is_authenticated and request.user.is_staff:
+            return True
+        elif request.user.is_authenticated:
+            return request.user.email == view.kwargs.get('pk')
+
+
+class IsEducationOwner(permissions.BasePermission):
+    async def has_permission(self, request, view):
+        if request.user.is_authenticated and request.user.is_staff:
+            return True
+        elif request.user.is_authenticated:
+            profile = await get_profile(request)
+            pk = view.kwargs.get('pk')
+            async for education in profile.education.all():
+                if education.id == pk:
+                    return True
+            return False
 
 
 class HasDiaryPermission(permissions.BasePermission):
