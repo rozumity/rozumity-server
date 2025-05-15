@@ -50,6 +50,7 @@ class UserSerializer(ModelSerializer):
 class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
     country = CountryField()
     gender = CharField(source='get_gender_display')
+    custom_id = "email"
 
 
 class ClientProfileSerializer(ProfileSerializerBase):
