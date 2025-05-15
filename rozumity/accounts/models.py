@@ -5,8 +5,12 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-from django_countries.fields import CountryField
 #from django.contrib.postgres.fields import ArrayField
+
+from django_countries.fields import CountryField
+from djmoney.models.fields import MoneyField
+
+from rozumity.utils import getrel
 
 from .managers import EmailUserManager
 
@@ -68,7 +72,7 @@ class AbstractProfile(models.Model):
 
     @property
     def id(self):
-        return self.email.id
+        return self.email_id
     
     @property
     async def name(self):
@@ -125,7 +129,7 @@ class Speciality(models.Model):
         verbose_name_plural = _('Specialities')
 
     def __str__(self):
-        return str(self.title)
+        return f'{self.code} {self.title}'
 
 
 class University(models.Model):
@@ -155,7 +159,9 @@ class Education(models.Model):
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
     date_start = models.DateField()
     date_end = models.DateField()
-    is_medical = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f'{self.get_degree_display()}, {self.speciality}, {self.university} ({self.date_start} - {self.date_end})'
 
     class Meta:
         verbose_name = _("Education")
@@ -175,8 +181,7 @@ class SubscriptionPlan(models.Model):
 
     title = models.CharField(max_length=64)
     description = models.TextField(max_length=500)
-    duration = models.DurationField()
-    price = models.DecimalField(max_digits=6, decimal_places=2)
+    price = MoneyField(max_digits=14, decimal_places=2, default_currency='USD')
     owner_type = models.SmallIntegerField(
         choices=OwnerTypes.choices, default=OwnerTypes.BOTH
     )
@@ -191,103 +196,154 @@ class SubscriptionPlan(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.price} ({self.get_owner_type_display()})"
-
-
+    
+    
 class TherapyContract(models.Model):
-    client_email = models.ForeignKey(
-        ClientProfile, on_delete=models.CASCADE, blank=True,
-        related_name="contract"
+    class DurationDays(models.IntegerChoices):
+        FREE = 0, _("Free")
+        DAY = 1, _("Day")
+        WEEK = 7, _("Week")
+        WEEK2 = 14, _("Two weeks")
+        MONTH = 30, _("Month")
+        MONTH3 = 90, _("Three months")
+        MONTH6 = 180, _("Half a year")
+        YEAR = 360, _("Year")
+        FOREVER = 999, _("Forever")
+
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="contract"
     )
-    expert_email = models.ForeignKey(
-        ExpertProfile, on_delete=models.CASCADE, blank=True,
-        related_name="contract"
+    expert = models.ForeignKey(
+        ExpertProfile, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="contract"
     )
     client_plan = models.ForeignKey(
-        SubscriptionPlan, on_delete=models.PROTECT, blank=True,
-        related_name="client_contract"
+        SubscriptionPlan, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="contract_client"
     )
     expert_plan = models.ForeignKey(
-        SubscriptionPlan, on_delete=models.PROTECT, blank=True,
-        related_name="expert_contract"
+        SubscriptionPlan, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="contract_expert"
     )
-    date_start = models.DateTimeField(default=timezone.now)
+    client_plan_days = models.SmallIntegerField(
+        choices=DurationDays.choices, default=DurationDays.FREE
+    )
+    expert_plan_days = models.SmallIntegerField(
+        choices=DurationDays.choices, default=DurationDays.FREE
+    )
+    contract_start_date = models.DateTimeField(default=timezone.now, editable=False)
+    client_plan_prolong_date = models.DateTimeField(default=timezone.now)
+    expert_plan_prolong_date = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = _("Therapy Contract")
         verbose_name_plural = _("Therapy Contracts")
 
     def __str__(self):
-        return f'Contract | Client: {self.client_email}, Expert: {self.expert_email}'
-
-    @property
-    async def is_paid(self):
-        return any(self.subscriptionClient, self.subscriptionExpert)
-
-    @property
-    async def is_paid_full(self):
-        return all(self.subscriptionClient, self.subscriptionExpert)
-
-    @property
-    async def is_paid_client(self):
-        return True if self.subscriptionClient else False
-
-    @property
-    async def is_paid_expert(self):
-        return True if self.subscriptionExpert else False
+        return f'Contract | Client: {self.client}, Expert: {self.expert}'
 
     @property
     async def date_end_client(self):
-        if self.subscriptionClient:
-            return self.date_start + timedelta(days=self.subscriptionClient.duration)
+        if self.client_plan_duration:
+            return self.client_plan_prolong_date + timedelta(
+                days=self.client_plan_days
+            )
 
     @property
     async def date_end_expert(self):
-        if self.subscriptionExpert:
-            return self.date_start + timedelta(days=self.subscriptionExpert.duration)
+        if self.expert_plan:
+            return self.expert_plan_prolong_date + timedelta(
+                days=self.expert_plan_days
+            )
 
     @property
     async def date_end(self):
-        date_end_client = self.date_end_client
-        date_end_expert = self.date_end_expert
-        if date_end_client or date_end_expert:
-            return date_end_client if date_end_client > date_end_expert else date_end_expert
+        return max(await self.date_end_client, await self.date_end_expert)
+
+    @property
+    async def is_paid(self):
+        return any((
+            self.client_plan_days != self.DurationDays.FREE,
+            self.expert_plan_days != self.DurationDays.FREE
+        ))
+
+    @property
+    async def is_paid_full(self):
+        return all((
+            self.client_plan_days != self.DurationDays.FREE,
+            self.expert_plan_days != self.DurationDays.FREE
+        ))
+
+    @property
+    async def is_paid_client(self):
+        return self.client_plan_days != self.DurationDays.FREE
+
+    @property
+    async def is_paid_expert(self):
+        return self.expert_plan_days != self.DurationDays.FREE
 
     @property
     async def is_active_client(self):
-        return self.date_end_client < timezone.now()
+        if await self.is_paid_client:
+            return await self.date_end_client < timezone.now()
+        return False
 
     @property
     async def is_active_expert(self):
-        return self.date_end_expert < timezone.now()
+        if await self.is_paid_expert:
+            return await self.date_end_expert < timezone.now()
+        return False
 
     @property
     async def is_active(self):
-        return self.date_end < timezone.now()
+        if await self.is_paid:
+            return any((
+                await self.is_active_client,
+                await self.is_active_expert
+            ))
+        return False
+
+    @property
+    async def is_active_full(self):
+        if await self.is_paid_full:
+            return await self.date_end < timezone.now()
+        return False
+
+    @property
+    async def has_client_only(self):
+        return all((await getrel(self, "client"), not await getrel(self, "expert")))
+
+    @property
+    async def has_expert_only(self):
+        return all((await getrel(self, "expert"), not await getrel(self, "client")))
+
+    @property
+    async def has_both(self):
+        return all((await getrel(self, "expert"), await getrel(self, "client")))
 
     @property
     async def has_diary(self):
-        return any(
-            self.subscriptionClient.has_diary,
-            self.subscriptionExpert.has_diary
-        )
+        client_plan = await getrel(self, "client_plan")
+        expert_plan = await getrel(self, "expert_plan")
+        return any((client_plan.has_diary, expert_plan.has_diary))
 
     @property
     async def has_ai(self):
-        return any(
-            self.subscriptionClient.has_ai,
-            self.subscriptionExpert.has_ai
-        )
+        client_plan = await getrel(self, "client_plan")
+        expert_plan = await getrel(self, "expert_plan")
+        return any((client_plan.has_ai, expert_plan.has_ai))
 
     @property
     async def has_screening(self):
-        return any(
-            self.subscriptionClient.has_screening,
-            self.subscriptionExpert.has_screening
-        )
+        client_plan = await getrel(self, "client_plan")
+        expert_plan = await getrel(self, "expert_plan")
+        return any((client_plan.has_screening, expert_plan.has_screening))
 
     @property
     async def has_dyagnosis(self):
-        return self.subscriptionExpert.has_dyagnosis
+        expert_plan = await getrel(self, "expert_plan")
+        return expert_plan.has_dyagnosis
 
 
 class Diary(models.Model):
