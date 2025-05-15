@@ -22,7 +22,7 @@ urlpatterns = [
     ),
     path(
         "education/education/<int:pk>/",
-        EducationRetrieveUpdateDestroyView.as_view(),
+        EducationRetrieveUpdateView.as_view(),
         name='education'
     ),
     path(

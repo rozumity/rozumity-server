@@ -87,8 +87,8 @@ class EducationListCreateView(
     permission_classes = (IsAdminListCreateExpertCreate,)
 
 
-class EducationRetrieveUpdateDestroyView(
-    CacheRUDMixin, RetrieveUpdateDestroyAPIView
+class EducationRetrieveUpdateView(
+    CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = Education.objects.select_related(
         "university", "speciality"
