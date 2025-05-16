@@ -1,11 +1,15 @@
 import uuid
+from django.utils.translation import gettext_lazy as _
 from django.db import models
 
 
 class Screening(models.Model):
-    id = models.SlugField(primary_key=True, max_length=5, editable=False, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('Screening')
+        verbose_name_plural = _('Screenings')
 
     def __str__(self):
         return self.title
@@ -15,14 +19,21 @@ class ScreeningCategory(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
 
+    class Meta:
+        verbose_name = _('Category')
+        verbose_name_plural = _('Categories')
+
     def __str__(self):
         return self.title
 
 
 class ScreeningDimension(models.Model):
-    id = models.SlugField(primary_key=True, max_length=5, editable=False, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('Dimension')
+        verbose_name_plural = _('Dimensions')
 
     def __str__(self):
         return self.title
@@ -42,6 +53,8 @@ class ScreeningQuestion(models.Model):
     )
 
     class Meta:
+        verbose_name = _('Question')
+        verbose_name_plural = _('Questions')
         indexes = [
             models.Index(fields=["screening", "dimension"]),
         ]
@@ -58,6 +71,10 @@ class ScreeningAnswer(models.Model):
     )
     title = models.CharField(max_length=255)
     value = models.FloatField()
+
+    class Meta:
+        verbose_name = _('Answer')
+        verbose_name_plural = _('Answers')
 
     def __str__(self):
         return self.title
@@ -80,6 +97,8 @@ class ScreeningResponse(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        verbose_name = _('Response')
+        verbose_name_plural = _('Responses')
         unique_together = ("client", "question")
         indexes = [
             models.Index(fields=["client", "question"]),
@@ -107,6 +126,10 @@ class ScreeningResult(models.Model):
     score = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
+    class Meta:
+        verbose_name = _('Result')
+        verbose_name_plural = _('Results')
+
     def __str__(self):
         return f"{self.client_id} {self.result_info.screening_id}"
 
@@ -122,6 +145,8 @@ class ScreeningResultInfo(models.Model):
     description = models.TextField(blank=True, null=True, max_length=500)
 
     class Meta:
+        verbose_name = _('Result Info')
+        verbose_name_plural = _('Results Info')
         unique_together = ("screening", "min_score", "max_score")
         indexes = [
             models.Index(fields=["screening", "min_score", "max_score"]),
@@ -136,6 +161,10 @@ class Survey(models.Model):
     title = models.CharField(max_length=255, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
 
+    class Meta:
+        verbose_name = _('Survey')
+        verbose_name_plural = _('Survey')
+
     def __str__(self):
         return self.title
 
@@ -144,6 +173,10 @@ class SurveyTheme(models.Model):
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="themes")
     title = models.TextField()
     description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('Survey Theme')
+        verbose_name_plural = _('Survey Themes')
 
     def __str__(self):
         return self.title
@@ -159,6 +192,8 @@ class SurveyResult(models.Model):
     completed_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        verbose_name = _('Survey Result')
+        verbose_name_plural = _('Survey Results')
         indexes = [
             models.Index(fields=["client", "survey",]),
         ]
@@ -180,6 +215,8 @@ class SurveyEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = _('Survey Entry')
+        verbose_name_plural = _('Survey Entries')
         unique_together = ("theme", "result")
         indexes = [
             models.Index(fields=["theme", "result"]),
