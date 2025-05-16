@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'djmoney',
     'rozumity',
-    'accounts'
+    'accounts',
+    'screening',
+    'diary'
 ]
 
 MIDDLEWARE = [
