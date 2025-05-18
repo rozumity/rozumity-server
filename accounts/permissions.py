@@ -5,25 +5,12 @@ from accounts.models import TherapyContract
 from accounts.utils import get_profile
 
 
-class IsAdminListCreateExpertCreate(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        if request.user.is_staff:
-            return True
-        profile = await get_profile(request)
-        return request.method == "POST" and "expert" in profile.__class__.__name__.lower()
-
-
 class IsExpert(permissions.BasePermission):
     async def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.is_staff:
-            return True
-        elif request.user.is_authenticated:
+        if request.user.is_authenticated:
             profile = await get_profile(request)
             return "expert" in profile.__class__.__name__.lower()
-        else:
-            return False
+        return False
 
 
 class IsContractSigner(permissions.BasePermission):
@@ -34,23 +21,19 @@ class IsContractSigner(permissions.BasePermission):
 
 class IsProfileOwner(permissions.BasePermission):
     async def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.is_staff:
-            return True
-        elif request.user.is_authenticated:
+        if request.user.is_authenticated:
             return request.user.email == view.kwargs.get('pk')
 
 
 class IsEducationOwner(permissions.BasePermission):
     async def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.is_staff:
-            return True
-        elif request.user.is_authenticated:
+        if request.user.is_authenticated:
             profile = await get_profile(request)
             pk = view.kwargs.get('pk')
             async for education in profile.education.all():
                 if education.id == pk:
                     return True
-            return False
+        return False
 
 
 class HasDiaryPermission(permissions.BasePermission):

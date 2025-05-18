@@ -12,14 +12,14 @@ class IsUser(IsAuthenticated):
         return request.user.is_authenticated
 
 
-class IsAdminListUserCreate(BasePermission):
+class IsCreatorOwner(BasePermission):
     async def has_permission(self, request, view):
-        return all((
-            request.user.is_authenticated,
-            request.method == "POST" or (
-                request.method == "GET" and request.user.is_staff
-            )
-        ))
+        if not request.user.is_authenticated:
+            return False
+        if request.method == "POST":
+            return request.user.email == request.data.email
+        else:
+            return request.user.email == view.kwargs.get('pk')
 
 
 class IsAdminCreateUserList(BasePermission):
