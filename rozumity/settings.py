@@ -196,3 +196,29 @@ SIMPLE_JWT = {
 
 CURRENCIES = ('USD', 'EUR', 'UAH')
 SERIALIZATION_MODULES = {"json": "djmoney.serializers"}
+
+DAISY_SETTINGS = {
+    'SITE_TITLE': 'Rozumity',
+    'SITE_HEADER': 'ROZUMITY ADMIN',
+    'INDEX_TITLE': "Let's edit!",
+    'LOAD_FULL_STYLES': False,
+    'SHOW_CHANGELIST_FILTER': False,
+    'DONT_SUPPORT_ME': True,
+    'SIDEBAR_FOOTNOTE': 'Developed by @imgvoid',
+    'APPS_REORDER': {
+        'auth': {
+            'hide': True,
+        },
+        'accounts': {
+            'icon': 'fa-solid fa-person-military-pointing',
+            'name': 'Authorization',
+            'hide': False,
+            'divider_title': "Administration"
+        },
+        'educations': {
+            'name': 'Education',
+            'hide': False,
+            'divider_title': "Management"
+        }
+    },
+}
