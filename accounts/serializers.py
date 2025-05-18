@@ -5,38 +5,15 @@ from rest_framework.serializers import (
 )
 from django_countries.serializer_fields import CountryField
 
-from rozumity.mixins.serialization_mixins import CountryFieldMixin
+from rozumity.mixins.serialization_mixins import (
+    CountryFieldMixin, ReadOnlySerializerMixin
+)
 
-from .models import *
+from educations.serializers import EducationSerializer
 
+from accounts.models import *
+from educations.models import Education
 
-# --- Education
-
-class SpecialitySerializer(ModelSerializer):
-    class Meta:
-        model = Speciality
-        fields = '__all__'
-
-
-class UniversitySerializer(CountryFieldMixin, ModelSerializer):
-    country = CountryField()
-
-    class Meta:
-        model = University
-        fields = '__all__'
-
-
-class EducationSerializer(ModelSerializer):
-    university = UniversitySerializer()
-    speciality = SpecialitySerializer()
-    degree = CharField(source='get_degree_display')
-
-    class Meta:
-        model = Education
-        fields = "__all__"
-        read_only_fields = ('id','university', "speciality")
-
-# Education ---
 # --- Profile
 
 class UserSerializer(ModelSerializer):
@@ -64,19 +41,20 @@ class ClientProfileSerializer(ProfileSerializerBase):
         read_only_fields = ('date_birth', "email")
 
 
-class ExpertProfileReadSerializer(ProfileSerializerBase):
+class ExpertProfileReadOnlySerializer(
+    ReadOnlySerializerMixin, ProfileSerializerBase
+):
     education = EducationSerializer(many=True)
     countries_allowed = CountryField()
 
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "email")
 
 
-class ExpertProfileWriteSerializer(ProfileSerializerBase):
+class ExpertProfileSerializer(ProfileSerializerBase):
     education = PrimaryKeyRelatedField(
-        queryset=Education.objects.select_related(
+        queryset = Education.objects.select_related(
             'university','speciality'
         ).all(), 
         many=True

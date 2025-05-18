@@ -16,36 +16,6 @@ urlpatterns = [
         name='user'
     ),
     path(
-        "education/educations/",
-        EducationListCreateView.as_view(),
-        name='educations'
-    ),
-    path(
-        "education/education/<int:pk>/",
-        EducationRetrieveUpdateView.as_view(),
-        name='education'
-    ),
-    path(
-        "education/universities/",
-        UniversityListView.as_view(),
-        name='universities'
-    ),
-    path(
-        "education/university/<int:pk>/",
-        UniversityRetrieveView.as_view(),
-        name='university'
-    ),
-    path(
-        "education/speciality/<int:pk>/",
-        SpecialityRetrieveView.as_view(),
-        name='speciality'
-    ),
-    path(
-        "education/specialities/",
-        SpecialityListView.as_view(),
-        name='speciality'
-    ),
-    path(
         "profile/client/<str:pk>/",
         ClientProfileRetrieveUpdateView.as_view(),
         name='client-profile'
@@ -67,7 +37,7 @@ urlpatterns = [
     ),
     path(
         "contracts/",
-        TherapyContractCreateListView.as_view(),
+        TherapyContractCreateView.as_view(),
         name='contracts'
     ),
     path(
