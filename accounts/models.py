@@ -12,14 +12,16 @@ from djmoney.models.fields import MoneyField
 
 from rozumity.utils import getrel
 
-from .managers import EmailUserManager
+from accounts.managers import EmailUserManager
 
 
+# TODO: db_index
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
     email = models.EmailField(_("email address"), unique=True, max_length=64)
     is_client = models.BooleanField(default=False)
     is_expert = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
@@ -34,10 +36,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.email)
-    
-    @property
-    def is_staff(self):
-        return self.is_superuser
 
 
 class AbstractProfile(models.Model):
@@ -94,16 +92,24 @@ class AbstractProfile(models.Model):
     async def gender_verbose(self):
         return self.get_gender_display()
 
+    @property
+    async def is_filled(self):
+        return bool(await self.name) and bool(self.country)
+
+    @property
+    async def is_empty(self):
+        return not await self.is_filled
+
 
 class ClientProfile(AbstractProfile):
     class Meta:
-        verbose_name = _("Client's Profile")
-        verbose_name_plural = _("Clients' Profiles")
+        verbose_name = _("Profile Client")
+        verbose_name_plural = _("Profiles Clients")
         default_related_name = 'clientprofile'
 
 
 class ExpertProfile(AbstractProfile):
-    education = models.ManyToManyField('Education', blank=True)
+    education = models.ManyToManyField('educations.Education', blank=True)
     education_extra = models.TextField(max_length=500, default="")
     countries_allowed = CountryField(
         multiple=True, blank=True, 
@@ -111,69 +117,15 @@ class ExpertProfile(AbstractProfile):
     )
 
     class Meta:
-        verbose_name = _("Expert's Profile")
-        verbose_name_plural = _("Experts' Profiles")
+        verbose_name = _("Profile Expert")
+        verbose_name_plural = _("Profiles Expert")
         default_related_name = 'expertprofile'
 
 
 class StaffProfile(AbstractProfile):
     class Meta:
-        verbose_name = _("Staff member's Profile")
-        verbose_name_plural = _("Staff members' Profiles")
-
-
-class Speciality(models.Model):
-    code = models.SmallIntegerField()
-    title = models.CharField(max_length=128)
-    is_medical = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = _('Speciality')
-        verbose_name_plural = _('Specialities')
-
-    def __str__(self):
-        return f'{self.code} {self.title}'
-
-
-class University(models.Model):
-    title = models.CharField(max_length=128)
-    country = CountryField(blank_label="(Select country)")
-
-    class Meta:
-        verbose_name = _('University')
-        verbose_name_plural = _('Universities')
-
-    def __str__(self):
-        return str(self.title)
-
-
-# TODO: possibility to upload or share a diploma or a certificate
-class Education(models.Model):
-    class DegreeChoices(models.IntegerChoices):
-        COURSE = 0, _("Course")
-        UNDER = 1, _("Undergraduate")
-        SPEC = 2, _("Specialist")
-        MASTER = 3, _("Master")
-        POST = 4, _("Postgraduate")
-        DOC = 5, _("Doctor")
-
-    university = models.ForeignKey(University, on_delete=models.PROTECT)
-    degree = models.SmallIntegerField(choices=DegreeChoices.choices, default=DegreeChoices.COURSE)
-    speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
-    date_start = models.DateField()
-    date_end = models.DateField()
-    
-    def __str__(self):
-        return f'{self.get_degree_display()}, {self.speciality}, {self.university} ({self.date_start} - {self.date_end})'
-
-    class Meta:
-        verbose_name = _("Education")
-        verbose_name_plural = _("Educations")
-
-    @property
-    async def education_duration(self):
-        delta = self.date_start - self.date_end
-        return round(delta.days / 365)
+        verbose_name = _("Profile Staff")
+        verbose_name_plural = _("Profiles Staff")
 
 
 class SubscriptionPlan(models.Model):
