@@ -12,7 +12,7 @@ class CacheMixinBase:
 
 
 class CacheListMixin(CacheMixinBase):
-    async def get(self, request, *args, **kwargs):
+    async def alist(self, request, *args, **kwargs):
         cache_key_page = await self._generate_cache_key(request)
         cache_key = await self._generate_cache_key()
 
@@ -47,8 +47,8 @@ class CacheListMixin(CacheMixinBase):
 
 
 class CacheCreateMixin(CacheMixinBase):
-    async def post(self, request, *args, **kwargs):
-        resp = await self.acreate(request, *args, **kwargs)
+    async def acreate(self, request, *args, **kwargs):
+        resp = await sync_to_async(self.create)(request, *args, **kwargs)
         id_name = self.serializer_class.custom_id if hasattr(self.serializer_class, "custom_id") else "id"
         try:
             cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
@@ -59,7 +59,7 @@ class CacheCreateMixin(CacheMixinBase):
 
 
 class CacheRetrieveMixin(CacheMixinBase):
-    async def get(self, request, *args, **kwargs):
+    async def aretrieve(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key))
@@ -76,15 +76,15 @@ class CacheUpdateMixin(CacheMixinBase):
         await cache.aset(cache_key, resp.data)
         return resp
 
-    async def put(self, request, *args, **kwargs):
+    async def aupdate(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
-        resp = await sync_to_async(self.update(request, *args, **kwargs))
+        resp = await sync_to_async(self.update)(request, *args, **kwargs)
         await cache.aset(cache_key, resp.data)
         return resp
 
 
 class CacheDestroyMixin(CacheMixinBase):
-    async def delete(self, request, *args, **kwargs):
+    async def adestroy(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         resp = await sync_to_async(self.destroy(request, *args, **kwargs))
         if await cache.ahas_key(cache_key):
@@ -105,4 +105,11 @@ class CacheRDMixin(CacheRetrieveMixin, CacheDestroyMixin):
 
 
 class CacheRUDMixin(CacheRetrieveMixin, CacheUpdateMixin, CacheDestroyMixin):
+    pass
+
+
+class CacheMixin(
+    CacheListMixin, CacheCreateMixin, CacheRetrieveMixin, 
+    CacheUpdateMixin, CacheDestroyMixin
+):
     pass

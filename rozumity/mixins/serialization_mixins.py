@@ -15,3 +15,10 @@ class ReadWriteDiffMixin:
             return read
         self.serializer_class = write
         return write
+
+
+class ReadOnlySerializerMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.read_only = True
