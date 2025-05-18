@@ -3,43 +3,38 @@ from screening.models import *
 
 # Register your models here.
 
-@admin.register(Screening)
-class ScreeningAdmin(admin.ModelAdmin):
+@admin.register(Questionary)
+class QuestionaryAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningCategory)
-class ScreeningCategoryAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryCategory)
+class QuestionaryCategoryAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningDimension)
-class ScreeningDimensionAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryDimension)
+class QuestionaryDimensionAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningQuestion)
-class ScreeningQuestionAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryQuestion)
+class QuestionaryQuestionAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningAnswer)
-class ScreeningAnswerAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryAnswer)
+class QuestionaryAnswerAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningResponse)
-class ScreeningResponseAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryResponse)
+class QuestionaryResponseAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ScreeningResult)
-class ScreeningResultAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(ScreeningResultInfo)
-class ScreeningResultInfoAdmin(admin.ModelAdmin):
+@admin.register(QuestionaryResult)
+class QuestionaryResultAdmin(admin.ModelAdmin):
     pass
 
 

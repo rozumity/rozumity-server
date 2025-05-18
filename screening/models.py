@@ -3,102 +3,138 @@ from django.utils.translation import gettext_lazy as _
 from django.db import models
 
 
-class Screening(models.Model):
+class QuestionaryCategory(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = _('Screening')
-        verbose_name_plural = _('Screenings')
+        verbose_name = _('Questionary Category')
+        verbose_name_plural = _('Questionary Categories')
 
     def __str__(self):
         return self.title
 
 
-class ScreeningCategory(models.Model):
+# TODO: caching property
+class Questionary(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    category = models.ForeignKey(
+        QuestionaryCategory, on_delete=models.CASCADE,
+        related_name="questionaries", null=True, db_index=True
+    )
+    min_score = models.FloatField(default=0)
+    max_score = models.FloatField(default=100)
 
     class Meta:
-        verbose_name = _('Category')
-        verbose_name_plural = _('Categories')
+        verbose_name = _('Questionary')
+        verbose_name_plural = _('Questionaries')
 
     def __str__(self):
         return self.title
 
 
-class ScreeningDimension(models.Model):
+class QuestionaryDimension(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = _('Dimension')
-        verbose_name_plural = _('Dimensions')
+        verbose_name = _('Questionary Dimension')
+        verbose_name_plural = _('Questionary Dimensions')
 
     def __str__(self):
         return self.title
 
 
-class ScreeningQuestion(models.Model):
-    screening = models.ForeignKey(
-        Screening, on_delete=models.CASCADE, 
-        related_name="questions", db_index=True
+class QuestionaryQuestion(models.Model):
+    questionary = models.ForeignKey(
+        Questionary, on_delete=models.CASCADE, 
+        related_name="questions", null=True, db_index=True
     )
     title = models.CharField(max_length=255)
     text = models.TextField()
     weight = models.FloatField(default=1.0)
     dimension = models.ForeignKey(
-        ScreeningDimension, on_delete=models.CASCADE, 
+        QuestionaryDimension, on_delete=models.CASCADE, 
         related_name="questions", db_index=True
     )
 
     class Meta:
-        verbose_name = _('Question')
-        verbose_name_plural = _('Questions')
+        verbose_name = _('Questionary Question')
+        verbose_name_plural = _('Questionary Questions')
         indexes = [
-            models.Index(fields=["screening", "dimension"]),
+            models.Index(fields=["questionary", "dimension"]),
         ]
-        unique_together = ('screening', 'dimension')
+        unique_together = ('questionary', 'dimension')
 
     def __str__(self):
         return self.title
 
 
-class ScreeningAnswer(models.Model):
+class QuestionaryAnswer(models.Model):
     question = models.ForeignKey(
-        Screening, on_delete=models.CASCADE, 
+        QuestionaryQuestion, on_delete=models.CASCADE, 
         related_name="answers", db_index=True
     )
     title = models.CharField(max_length=255)
     value = models.FloatField()
 
     class Meta:
-        verbose_name = _('Answer')
-        verbose_name_plural = _('Answers')
+        verbose_name = _('Questionary Answer')
+        verbose_name_plural = _('Questionary Answers')
 
     def __str__(self):
         return self.title
 
 
-class ScreeningResponse(models.Model):
+class QuestionaryResult(models.Model):
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, 
+        unique=True, editable=False
+    )
     client = models.ForeignKey(
         'accounts.ClientProfile', on_delete=models.PROTECT,
-        null=True, blank=True, related_name="screening_response",
+        null=True, blank=True, related_name="questionary_results",
         db_index=True
     )
+    questionary = models.ForeignKey(
+        Questionary, on_delete=models.CASCADE, db_index=True, null=True,
+        related_name="questionary_results"
+    )
+    scores = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = _('Questionary Result')
+        verbose_name_plural = _('Questionary Results')
+
+    def __str__(self):
+        return f"{self.client_id} {self.result_info.questionary_id}"
+
+
+class QuestionaryResponse(models.Model):
+    client = models.ForeignKey(
+        'accounts.ClientProfile', on_delete=models.PROTECT,
+        null=True, blank=True, related_name="questionary_response",
+        db_index=True
+    )
+    result = models.ForeignKey(
+        QuestionaryResult, on_delete=models.CASCADE, null=True, db_index=True,
+        related_name="questionary_response"
+    )
     question = models.ForeignKey(
-        ScreeningQuestion, on_delete=models.SET_NULL, null=True, db_index=True,
-        related_name="screening_response"
+        QuestionaryQuestion, on_delete=models.SET_NULL, null=True, db_index=True,
+        related_name="questionary_response"
     )
     answer = models.ForeignKey(
-        ScreeningAnswer, on_delete=models.SET_NULL, null=True, db_index=True,
-        related_name="screening_response"
+        QuestionaryAnswer, on_delete=models.SET_NULL, null=True, db_index=True,
+        related_name="questionary_response"
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        verbose_name = _('Response')
-        verbose_name_plural = _('Responses')
+        verbose_name = _('Questionary Response')
+        verbose_name_plural = _('Questionary Responses')
         unique_together = ("client", "question")
         indexes = [
             models.Index(fields=["client", "question"]),
@@ -106,54 +142,6 @@ class ScreeningResponse(models.Model):
 
     def __str__(self):
         return f"{self.question}, {self.client}"
-
-
-class ScreeningResult(models.Model):
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, 
-        unique=True, editable=False
-    )
-    client = models.ForeignKey(
-        'accounts.ClientProfile', on_delete=models.PROTECT,
-        null=True, blank=True, related_name="screening_results",
-        db_index=True
-    )
-    result_info = models.ForeignKey(
-        'ScreeningResultInfo', on_delete=models.CASCADE,
-        null=True, blank=True, related_name="screening_result_info",
-        db_index=True
-    )
-    score = models.FloatField()
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    class Meta:
-        verbose_name = _('Result')
-        verbose_name_plural = _('Results')
-
-    def __str__(self):
-        return f"{self.client_id} {self.result_info.screening_id}"
-
-
-class ScreeningResultInfo(models.Model):
-    screening = models.ForeignKey(
-        Screening, on_delete=models.CASCADE,
-        related_name="screening_possible_results"
-    )
-    min_score = models.FloatField()
-    max_score = models.FloatField()
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True, max_length=500)
-
-    class Meta:
-        verbose_name = _('Result Info')
-        verbose_name_plural = _('Results Info')
-        unique_together = ("screening", "min_score", "max_score")
-        indexes = [
-            models.Index(fields=["screening", "min_score", "max_score"]),
-        ]
-
-    def __str__(self):
-        return f"{self.title} ({self.min_score}-{self.max_score}), {self.screening}"
 
 # Survey
 
@@ -163,7 +151,7 @@ class Survey(models.Model):
 
     class Meta:
         verbose_name = _('Survey')
-        verbose_name_plural = _('Survey')
+        verbose_name_plural = _('Surveys')
 
     def __str__(self):
         return self.title
