@@ -104,7 +104,7 @@ class AbstractProfile(models.Model):
 class ClientProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Profile Client")
-        verbose_name_plural = _("Profiles Clients")
+        verbose_name_plural = _("Profiles Client")
         default_related_name = 'clientprofile'
 
 

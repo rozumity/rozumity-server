@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'verbose_name': 'Profile Client',
-                'verbose_name_plural': 'Profiles Clients',
+                'verbose_name_plural': 'Profiles Client',
                 'default_related_name': 'clientprofile',
             },
         ),
