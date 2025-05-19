@@ -8,12 +8,12 @@ app_name = 'screening'
 urlpatterns = [
     path(
         "questionaries/categories/",
-        QuestionaryCategoryListView.as_view(),
+        CategoryQuestionaryListView.as_view(),
         name="questionaries-categories"
     ),
     path(
         "questionaries/category/<int:pk>/",
-        QuestionaryCategoryRetrieveView.as_view(),
+        CategoryQuestionaryRetrieveView.as_view(),
         name="questionaries-category"),
     path(
         "questionaries/questionaries/",

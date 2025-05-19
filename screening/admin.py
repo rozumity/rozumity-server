@@ -8,8 +8,8 @@ class QuestionaryAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(QuestionaryCategory)
-class QuestionaryCategoryAdmin(admin.ModelAdmin):
+@admin.register(CategoryQuestionary)
+class CategoryQuestionaryAdmin(admin.ModelAdmin):
     pass
 
 

@@ -5,18 +5,18 @@ from screening.models import *
 from rozumity.mixins.serialization_mixins import ReadOnlySerializerMixin
 
 
-class QuestionaryCategorySerializer(
+class CategoryQuestionarySerializer(
     ReadOnlySerializerMixin, serializers.ModelSerializer
 ):
     class Meta:
-        model = QuestionaryCategory
+        model = CategoryQuestionary
         fields = "__all__"
 
 
 class QuestionarySerializer(
     ReadOnlySerializerMixin, serializers.ModelSerializer
 ):
-    category = QuestionaryCategorySerializer()
+    category = CategoryQuestionarySerializer()
 
     class Meta:
         model = Questionary

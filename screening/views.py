@@ -14,19 +14,19 @@ from screening.models import *
 from screening.serializers import *
 
 
-class QuestionaryCategoryListView(
+class CategoryQuestionaryListView(
     CacheLCMixin, ListCreateAPIView
 ):
-    queryset = QuestionaryCategory.objects.all()
-    serializer_class = QuestionaryCategorySerializer
+    queryset = CategoryQuestionary.objects.all()
+    serializer_class = CategoryQuestionarySerializer
     permission_classes = (IsUser,)
 
 
-class QuestionaryCategoryRetrieveView(
+class CategoryQuestionaryRetrieveView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
-    queryset = QuestionaryCategory.objects.all()
-    serializer_class = QuestionaryCategorySerializer
+    queryset = CategoryQuestionary.objects.all()
+    serializer_class = CategoryQuestionarySerializer
     permission_classes = (IsUser,)
 
 
