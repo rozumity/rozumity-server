@@ -1,12 +1,27 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinLengthValidator
+
+from rozumity.utils import rel
 
 from django_countries.fields import CountryField
 
 
 class Speciality(models.Model):
-    code = models.SmallIntegerField()
-    title = models.CharField(max_length=128)
+    code = models.CharField(
+        default="053", max_length=3,
+        validators=[MinLengthValidator(3)]
+    )
+    title = models.CharField(
+        max_length=128, default="Psychology"
+    )
+    code_world = models.CharField(
+        default="0313", max_length=4,
+        validators=[MinLengthValidator(4)]
+    )
+    title_world = models.CharField(
+        max_length=128, default="Psychology"
+    )
     is_medical = models.BooleanField(default=False)
 
     class Meta:
@@ -18,7 +33,8 @@ class Speciality(models.Model):
 
 
 class University(models.Model):
-    title = models.CharField(max_length=128)
+    title = models.CharField(max_length=128, default="")
+    title_world = models.CharField(max_length=128, default="")
     country = CountryField(blank_label="(Select country)")
 
     class Meta:
@@ -44,9 +60,12 @@ class Education(models.Model):
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
     date_start = models.DateField()
     date_end = models.DateField()
-    
+
     def __str__(self):
         return f'{self.get_degree_display()}, {self.speciality}, {self.university} ({self.date_start} - {self.date_end})'
+
+    async def rel(self, field_name:str=""):
+        return await rel(self, field_name)
 
     class Meta:
         verbose_name = _("Education")
