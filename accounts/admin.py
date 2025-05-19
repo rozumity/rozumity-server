@@ -28,30 +28,20 @@ class CustomUserAdmin(UserAdmin):
     jwt_tokens.short_description = "JWT Tokens"
 
     list_display = ('email', 'date_joined', 'is_client', 'is_expert', 'is_staff', 'is_active')
-    list_filter = ('email', 'date_joined', 'is_client', 'is_expert', 'is_active')
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('date_of_birth',)}),
-    )
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('date_of_birth',)}),
-    )
-    ordering = ('email',)
+    list_filter = ('date_joined', 'is_client', 'is_expert', 'is_staff', 'is_active')
     fieldsets = (
         (None, {'fields': ('email', 'password', 'jwt_tokens', 'is_client', 'is_expert', 'is_staff')}),
         ('Permissions', {'fields': ('is_active', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('date_joined',)}),
     )
-    
-    search_fields = ('email',)
+    add_fieldsets = (
+        (None, {'fields': ('email', 'password', 'is_client', 'is_expert', 'is_staff')}),
+        ('Permissions', {'fields': ('is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('date_joined',)}),
+    )
     ordering = ('email',)
     readonly_fields = ('jwt_tokens',)
-
-
-@admin.register(Permission)
-class CustomPermissionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'content_type', 'codename')
-    search_fields = ('name', 'codename')
-    list_filter = ('content_type',)
+    search_fields = ('email',)
 
 
 @admin.register(ClientProfile)
