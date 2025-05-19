@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
 
-from rozumity.utils import getrel
+from rozumity.utils import rel
 
 from accounts.managers import EmailUserManager
 
@@ -68,9 +68,17 @@ class AbstractProfile(models.Model):
     def __str__(self):
         return str(self.email)
 
+    async def rel(self, field_name:str=""):
+        return await rel(self, field_name)
+
     @property
     def id(self):
         return self.email_id
+
+    @property
+    async def user_email(self):
+        user = await rel(self, 'email')
+        return user.email
     
     @property
     async def name(self):
@@ -198,6 +206,9 @@ class TherapyContract(models.Model):
     def __str__(self):
         return f'Contract | Client: {self.client}, Expert: {self.expert}'
 
+    async def rel(self, field_name:str=""):
+        return await rel(self, field_name)
+
     @property
     async def date_end_client(self):
         if self.client_plan_duration:
@@ -267,37 +278,37 @@ class TherapyContract(models.Model):
 
     @property
     async def has_client_only(self):
-        return all((await getrel(self, "client"), not await getrel(self, "expert")))
+        return all((await rel(self, "client"), not await rel(self, "expert")))
 
     @property
     async def has_expert_only(self):
-        return all((await getrel(self, "expert"), not await getrel(self, "client")))
+        return all((await rel(self, "expert"), not await rel(self, "client")))
 
     @property
     async def has_both(self):
-        return all((await getrel(self, "expert"), await getrel(self, "client")))
+        return all((await rel(self, "expert"), await rel(self, "client")))
 
     @property
     async def has_diary(self):
-        client_plan = await getrel(self, "client_plan")
-        expert_plan = await getrel(self, "expert_plan")
+        client_plan = await rel(self, "client_plan")
+        expert_plan = await rel(self, "expert_plan")
         return any((client_plan.has_diary, expert_plan.has_diary))
 
     @property
     async def has_ai(self):
-        client_plan = await getrel(self, "client_plan")
-        expert_plan = await getrel(self, "expert_plan")
+        client_plan = await rel(self, "client_plan")
+        expert_plan = await rel(self, "expert_plan")
         return any((client_plan.has_ai, expert_plan.has_ai))
 
     @property
     async def has_screening(self):
-        client_plan = await getrel(self, "client_plan")
-        expert_plan = await getrel(self, "expert_plan")
+        client_plan = await rel(self, "client_plan")
+        expert_plan = await rel(self, "expert_plan")
         return any((client_plan.has_screening, expert_plan.has_screening))
 
     @property
     async def has_dyagnosis(self):
-        expert_plan = await getrel(self, "expert_plan")
+        expert_plan = await rel(self, "expert_plan")
         return expert_plan.has_dyagnosis
 
 
