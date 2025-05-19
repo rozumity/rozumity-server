@@ -1,0 +1,32 @@
+[
+    {
+        "model": "accounts.SubscriptionPlan",
+        "pk": 1,
+        "fields": {
+            "title": "Base Subscription Client",
+            "description": "Basic plan for clients",
+            "price": "10.00",
+            "price_currency": "UAH",
+            "owner_type": 0,
+            "has_diary": true,
+            "has_ai": true,
+            "has_screening": true,
+            "has_dyagnosis": false
+        }
+    },
+    {
+        "model": "accounts.SubscriptionPlan",
+        "pk": 2,
+        "fields": {
+            "title": "Base Subscription Expert",
+            "description": "Basic plan for experts",
+            "price": "20.00",
+            "price_currency": "UAH",
+            "owner_type": 1,
+            "has_diary": true,
+            "has_ai": true,
+            "has_screening": true,
+            "has_dyagnosis": true
+        }
+    }
+]

@@ -1,0 +1,166 @@
+[
+    {
+        "model": "educations.Speciality",
+        "pk": 1,
+        "fields": {
+            "code": "011",
+            "title": "Освітні педагогічні науки",
+            "code_world": "0111",
+            "title_world": 	"Education science"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 2,
+        "fields": {
+            "code": "012",
+            "title": "Дошкільна освіта",
+            "code_world": "0112",
+            "title_world": 	"Training for pre-school teachers"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 3,
+        "fields": {
+            "code": "013",
+            "title": "Початкова освіта",
+            "code_world": "0113",
+            "title_world": 	"Teacher training without subject specialisation"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 4,
+        "fields": {
+            "code": "014",
+            "title": "Середня освіта (за предметними спеціалізаціями)",
+            "code_world": "0114",
+            "title_world": 	"Teacher training with subject specialisation"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 5,
+        "fields": {
+            "code": "015",
+            "title": "Професійна освіта (за спеціалізаціями)",
+            "code_world": "0114",
+            "title_world": 	"Teacher training with subject specialisation"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 6,
+        "fields": {
+            "code": "016",
+            "title": "Спеціальна освіта",
+            "code_world": "0114",
+            "title_world": 	"Teacher training with subject specialisation"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 7,
+        "fields": {
+            "code": "053",
+            "title": "Психологія",
+            "code_world": "0313",
+            "title_world": "Psychology"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 8,
+        "fields": {
+            "code": "053",
+            "title": "Клінічна психологія",
+            "code_world": "0313",
+            "title_world": "Psychology"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 9,
+        "fields": {
+            "code": "054",
+            "title": "Соціологія",
+            "code_world": "0314",
+            "title_world": 	"Sociology and cultural studies"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 10,
+        "fields": {
+            "code": "224",
+            "title": "Технології медичної діагностики та лікування",
+            "code_world": "0914",
+            "title_world": "Medical diagnostic and treatment technology",
+            "is_medical": true
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 11,
+        "fields": {
+            "code": "222",
+            "title": "Медицина",
+            "code_world": "0912",
+            "title_world": 	"Medicine",
+            "is_medical": true
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 12,
+        "fields": {
+            "code": "225",
+            "title": "Медична психологія",
+            "code_world": "0915",
+            "title_world": "Therapy and rehabilitation",
+            "is_medical": true
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 13,
+        "fields": {
+            "code": "227",
+            "title": "Фізична реабілітація",
+            "code_world": "0915",
+            "title_world": "Therapy and rehabilitation",
+            "is_medical": true
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 14,
+        "fields": {
+            "code": "229",
+            "title": "Громадське здоров'я",
+            "code_world": "0919",
+            "title_world": "Health not elsewhere classified"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 15,
+        "fields": {
+            "code": "231",
+            "title": "Соціальна робота",
+            "code_world": "0923",
+            "title_world": "Social work and counselling"
+        }
+    },
+    {
+        "model": "educations.Speciality",
+        "pk": 16,
+        "fields": {
+            "code": "232",
+            "title": "Соціальне забезпечення",
+            "code_world": "0923",
+            "title_world": "Social work and counselling"
+        }
+    }
+]

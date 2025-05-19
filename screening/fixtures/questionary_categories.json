@@ -1,0 +1,34 @@
+[
+    {
+        "model": "screening.CategoryQuestionary",
+        "pk": 1,
+        "fields": {
+            "title": "Психологічні тести",
+            "description": "Тести для оцінки психологічного стану, особистості, емоцій та поведінки."
+        }
+    },
+    {
+        "model": "screening.CategoryQuestionary",
+        "pk": 2,
+        "fields": {
+            "title": "Профорієнтаційні тести",
+            "description": "Тести для визначення професійних схильностей та вибору кар'єри."
+        }
+    },
+    {
+        "model": "screening.CategoryQuestionary",
+        "pk": 3,
+        "fields": {
+            "title": "Освітні тести",
+            "description": "Тести для оцінки знань, навичок та навчальних досягнень."
+        }
+    },
+    {
+        "model": "screening.CategoryQuestionary",
+        "pk": 4,
+        "fields": {
+            "title": "Медичні тести",
+            "description": "Тести для оцінки стану здоров'я та медичних показників."
+        }
+    }
+]
