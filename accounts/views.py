@@ -94,17 +94,3 @@ class TherapyContractRetrieveUpdateView(
     ).all()
     serializer_class = TherapyContractSerializer
     permission_classes = (IsContractSigner,)
-
-
-class DiaryListCreateView(
-    CacheLCMixin, ListCreateAPIView
-):
-    queryset = Diary.objects.select_related("client").all()
-    serializer_class = TherapyContractSerializer
-
-
-class DiaryRetrieveUpdateDestroyView(
-    CacheRUDMixin, RetrieveUpdateDestroyAPIView
-):
-    queryset = Diary.objects.select_related("client").all()
-    serializer_class = DiarySerializer
