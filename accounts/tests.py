@@ -18,8 +18,8 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
         user_client, user_expert = await self.create_test_users()
         self.assertTrue(user_client.is_client)
         self.assertTrue(user_expert.is_expert)
-        self.assertEqual(user_client.email, self.emails["client"])
-        self.assertEqual(user_expert.email, self.emails["expert"])
+        self.assertEqual(user_client.email, self.get_emails()["client"])
+        self.assertEqual(user_expert.email, self.get_emails()["expert"])
         for user in (user_client, user_expert):
             self.assertTrue(user.is_active)
             self.assertFalse(user.is_staff)
@@ -48,8 +48,8 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
     async def test_create_profiles(self):
         User = await self.get_user_model()
         profile_client, profile_expert = await self.create_test_profiles()
-        self.assertEqual(await profile_client.user_email, self.emails["client"])
-        self.assertEqual(await profile_expert.user_email, self.emails["expert"])
+        self.assertEqual(await profile_client.user_email, self.get_emails()["client"])
+        self.assertEqual(await profile_expert.user_email, self.get_emails()["expert"])
         speciality = await Speciality.objects.acreate(
             code=222, title="Medicine", is_medical=True
         )

@@ -7,56 +7,68 @@ from educations.models import *
 
 
 class ProfileCreationMixin:
-    @classmethod
-    def setUpTestData(cls):
-        cls.emails = {
+    @staticmethod
+    def get_emails():
+        return {
             "client": "client@user.com",
             "expert": "expert@user.com",
         }
-        cls.password = "password123"
+    
+    @staticmethod
+    def get_password():
+        return "password123"
 
     @staticmethod
     async def get_user_model():
         return await sync_to_async(get_user_model)()
 
-    async def create_test_user_client(self):
-        User = await self.get_user_model()
+    @classmethod
+    async def create_test_user_client(cls):
+        User = await cls.get_user_model()
         return await sync_to_async(User.objects.create_user)(
-            email=self.emails["client"],
-            password=self.password,
+            email=cls.get_emails()["client"],
+            password=cls.get_password(),
             is_client=True
         )
 
-    async def create_test_user_expert(self):
-        User = await self.get_user_model()
+    @classmethod
+    async def create_test_user_expert(cls):
+        User = await cls.get_user_model()
         return await sync_to_async(User.objects.create_user)(
-            email=self.emails["expert"],
-            password=self.password,
+            email=cls.get_emails()["expert"],
+            password=cls.get_password(),
             is_expert=True
         )
-    
-    async def create_test_users(self):
-        return await self.create_test_user_client(), await self.create_test_user_expert()
 
-    async def create_test_client(self):
-        user = await self.create_test_user_client()
+    @classmethod
+    async def create_test_users(cls):
+        return await cls.create_test_user_client(), await cls.create_test_user_expert()
+
+    @classmethod
+    async def create_test_client(cls):
+        user = await cls.create_test_user_client()
         return await ClientProfile.objects.aget(user=user)
 
-    async def create_test_expert(self):
-        user = await self.create_test_user_expert()
+    @classmethod
+    async def create_test_expert(cls):
+        user = await cls.create_test_user_expert()
         return await ExpertProfile.objects.aget(user=user)
 
-    async def create_test_profiles(self):
-        user_client, user_expert = await self.create_test_users()
+    @classmethod
+    async def create_test_profiles(cls):
+        user_client, user_expert = await cls.create_test_users()
         client = await ClientProfile.objects.aget(user=user_client)
         expert = await ExpertProfile.objects.aget(user=user_expert)
         return client, expert
 
-    def create_test_user_client_sync(self):
-        return async_to_sync(self.create_test_user_client)()
+    @classmethod
+    def create_test_user_client_sync(cls):
+        return async_to_sync(cls.create_test_user_client)()
 
-    def create_test_user_expert_sync(self):
-        return async_to_sync(self.create_test_user_expert)()
+    @classmethod
+    def create_test_user_expert_sync(cls):
+        return async_to_sync(cls.create_test_user_expert)()
 
-    def create_test_profile_client_sync(self):
-        return async_to_sync(self.create_test_client)()
+    @classmethod
+    def create_test_profile_client_sync(cls):
+        return async_to_sync(cls.create_test_client)()

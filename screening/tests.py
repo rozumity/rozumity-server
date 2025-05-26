@@ -1,60 +1,166 @@
 from uuid import uuid4
+from httpx import AsyncClient, ASGITransport
 from django.test import TestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 from rozumity.mixins.testing_mixins import ProfileCreationMixin
 from rozumity.utils import rel
+from rozumity.asgi import application
 from screening.models import *
+from screening.views import *
 
 
 class ScreeningCreationTests(ProfileCreationMixin, TestCase):
-    async def test_create_questionary(self):
-        category = await CategoryQuestionary.objects.acreate(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client_profile = cls.create_test_profile_client_sync()
+        cls.user = cls.client_profile.user
+
+        cls.category = CategoryQuestionary.objects.create(
             title='category 1', description='description 1'
         )
-        questionary = await Questionary.objects.acreate(
+        cls.questionary = Questionary.objects.create(
             title='questionary 1', description='description 1',
-            category = category
+            category = cls.category
         )
-        question = await QuestionaryQuestion.objects.acreate(
+        cls.question = QuestionaryQuestion.objects.create(
             title='question 1', text='text 1', weight=0.2,
-            questionary=questionary,
+            questionary=cls.questionary,
         )
-        dimension = await QuestionaryDimension.objects.acreate(
+        cls.dimension = QuestionaryDimension.objects.create(
             title='dimension 1', description='description 1'
         )
-        answer = await QuestionaryAnswer.objects.acreate(
-            question=question, dimension=dimension,
+        cls.answer = QuestionaryAnswer.objects.create(
+            question=cls.question, dimension=cls.dimension,
             title='answer 1', value=5
         )
-        score1 = await QuestionaryScore.objects.acreate(
-            dimension=dimension, max_score=49
+        cls.score1 = QuestionaryScore.objects.create(
+            dimension=cls.dimension, max_score=49
         )
-        score2 = await QuestionaryScore.objects.acreate(
-            dimension=dimension, min_score=50
+        cls.score2 = QuestionaryScore.objects.create(
+            dimension=cls.dimension, min_score=50
         )
-        result = await QuestionaryResult.objects.acreate(
+        cls.result = QuestionaryResult.objects.create(
             title='result 1', description='description 1',
-            questionary=questionary
+            questionary=cls.questionary
         )
-        await result.scores.aset([score1, score2])
-        response = await QuestionaryResponse.objects.acreate(
-            client=await self.create_test_client(), result=result
+        cls.result.scores.set([cls.score1, cls.score2])
+        cls.response = QuestionaryResponse.objects.create(
+            client=cls.client_profile, result=cls.result
         )
-        await response.answers.aset([answer])
+        cls.response.answers.set([cls.answer])
 
-        category_test = questionary.category
-        self.assertEqual(category_test.title, category.title)
-        question_test = await questionary.questions.aget()
-        self.assertEqual(question_test.title, question.title)
-        answer_test = await rel(dimension, 'answers')
+    def setUp(self):
+        self.client = AsyncClient(
+            transport=ASGITransport(app=application), 
+            base_url="http://testserver"
+        )
+        self.token = str(RefreshToken.for_user(self.user).access_token)
+
+    async def test_create_questionary(self):
+        self.assertEqual(self.questionary.category.title, self.category.title)
+        question_test = await self.questionary.questions.aget()
+        self.assertEqual(question_test.title, self.question.title)
+        answer_test = await rel(self.dimension, 'answers')
         answer_test = await answer_test.aget()
         self.assertEqual(answer_test.title, answer_test.title)
         dimension_test = await rel(answer_test, 'dimension')
-        self.assertEqual(dimension_test.title, dimension.title)
-        result_test = await rel(response, 'result')
-        self.assertEqual(result_test.title, result.title)
-        score = await result_test.scores.aget(dimension=dimension, min_score=0)
-        self.assertEqual(score.min_score, score1.min_score)
-        self.assertEqual(score.max_score, score1.max_score)
+        self.assertEqual(dimension_test.title, self.dimension.title)
+        result_test = await rel(self.response, 'result')
+        self.assertEqual(result_test.title, self.result.title)
+        score = await result_test.scores.aget(dimension=self.dimension, min_score=0)
+        self.assertEqual(score.min_score, self.score1.min_score)
+        self.assertEqual(score.max_score, self.score1.max_score)
         response_test = await result_test.responses.aget()
         self.assertIsInstance(response_test.id, type(uuid4()))
-        self.assertEqual(score.max_score, score1.max_score)
+        self.assertEqual(score.max_score, self.score1.max_score)
+
+    async def test_category_list(self):
+        async with self.client as ac:
+            response = await ac.get(
+                "/api/screening/questionaries/categories/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("category 1", response.text)
+
+    async def test_questionary_list(self):
+            async with self.client as ac:
+                response = await ac.get(
+                    "/api/screening/questionaries/questionaries/",
+                    headers={"Authorization": f"Bearer {self.token}"}
+                )
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("questionary 1", response.text)
+
+    async def test_questionary_detail(self):
+        async with self.client as ac:
+            response = await ac.get(
+                f"/api/screening/questionaries/questionary/{self.questionary.pk}/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("questionary 1", response.text)
+
+    async def test_dimension_list(self):
+        async with self.client as ac:
+            response = await ac.get(
+                "/api/screening/questionaries/dimensions/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("dimension 1", response.text)
+
+    async def test_dimension_detail(self):
+        async with self.client as ac:
+            response = await ac.get(
+                f"/api/screening/questionaries/dimension/{self.dimension.pk}/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("dimension 1", response.text)
+
+    async def test_question_list(self):
+        async with self.client as ac:
+            response = await ac.get(
+                "/api/screening/questionaries/questions/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("question 1", response.text)
+
+    async def test_question_detail(self):
+        async with self.client as ac:
+            response = await ac.get(
+                f"/api/screening/questionaries/question/{self.question.pk}/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("question 1", response.text)
+
+    async def test_answer_list(self):
+        async with self.client as ac:
+            response = await ac.get(
+                "/api/screening/questionaries/answers/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("answer 1", response.text)
+
+    async def test_answer_detail(self):
+        async with self.client as ac:
+            response = await ac.get(
+                f"/api/screening/questionaries/answer/{self.answer.pk}/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("answer 1", response.text)
+
+    async def test_result_detail(self):
+        async with self.client as ac:
+            response = await ac.get(
+                f"/api/screening/questionaries/result/{self.result.pk}/",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("result 1", response.text)
