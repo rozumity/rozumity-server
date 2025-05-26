@@ -97,14 +97,3 @@ class TherapyContractSerializer(ModelSerializer):
         read_only_fields = ('client', 'expert', "contract_start_date")
 
 # --- Subscription
-# --- Diary
-
-class DiarySerializer(ModelSerializer):
-    client = HyperlinkedIdentityField(view_name="accounts:client-profile")
-
-    class Meta:
-        model = Diary
-        fields = "__all__"
-        read_only_fields = ('client', 'date_start')
-
-# Diary ---
