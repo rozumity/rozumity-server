@@ -34,8 +34,7 @@ class QuestionaryDimensionSerializer(
 class QuestionaryQuestionSerializer(
     ReadOnlySerializerMixin, serializers.ModelSerializer
 ):
-    Questionary = QuestionarySerializer()
-    dimension = QuestionaryDimensionSerializer()
+    questionary = QuestionarySerializer()
 
     class Meta:
         model = QuestionaryQuestion
@@ -46,6 +45,7 @@ class QuestionaryAnswerSerializer(
     ReadOnlySerializerMixin, serializers.ModelSerializer
 ):
     question = QuestionaryQuestionSerializer()
+    dimension = QuestionaryDimensionSerializer()
 
     class Meta:
         model = QuestionaryAnswer
