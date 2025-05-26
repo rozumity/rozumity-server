@@ -1,8 +1,5 @@
 from django.test import TestCase
-
-# Create your tests here.
-# python manage.py test educations
-from django.test import TestCase
+from rozumity.utils import rel
 from educations.models import *
 
 
@@ -16,6 +13,6 @@ class EducationTests(TestCase):
             university=university, degree=Education.DegreeChoices.DOC,
             speciality=speciality, date_start="2024-05-19", date_end="2020-05-19"
         )
-        university = await education.rel("university")
+        university = await rel(education, "university")
         self.assertEqual(university.title, "title")
         self.assertEqual(university.country.code, "UA")

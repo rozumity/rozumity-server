@@ -68,17 +68,13 @@ class AbstractProfile(models.Model):
     def __str__(self):
         return str(self.email)
 
-    async def rel(self, field_name:str=""):
-        return await rel(self, field_name)
-
     @property
     def id(self):
         return self.email_id
 
     @property
     async def user_email(self):
-        user = await rel(self, 'email')
-        return user.email
+        return getattr(await rel(self, 'email'), 'email')
     
     @property
     async def name(self):
@@ -205,9 +201,6 @@ class TherapyContract(models.Model):
 
     def __str__(self):
         return f'Contract | Client: {self.client}, Expert: {self.expert}'
-
-    async def rel(self, field_name:str=""):
-        return await rel(self, field_name)
 
     @property
     async def date_end_client(self):

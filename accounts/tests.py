@@ -4,58 +4,13 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from asgiref.sync import sync_to_async
+from rozumity.mixins.testing_mixins import ProfileCreationMixin
+from rozumity.utils import rel
 from accounts.models import (
     ClientProfile, ExpertProfile, StaffProfile,
     TherapyContract, SubscriptionPlan
 )
 from educations.models import *
-
-
-class ProfileCreationMixin:
-    @classmethod
-    def setUpTestData(cls):
-        cls.emails = {
-            "client": "client@user.com",
-            "expert": "expert@user.com",
-        }
-        cls.password = "password123"
-
-    @staticmethod
-    async def get_user_model():
-        return await sync_to_async(get_user_model)()
-
-    async def create_test_user_client(self):
-        User = await self.get_user_model()
-        return await sync_to_async(User.objects.create_user)(
-            email=self.emails["client"],
-            password=self.password,
-            is_client=True
-        )
-
-    async def create_test_user_expert(self):
-        User = await self.get_user_model()
-        return await sync_to_async(User.objects.create_user)(
-            email=self.emails["expert"],
-            password=self.password,
-            is_expert=True
-        )
-    
-    async def create_test_users(self):
-        return await self.create_test_user_client(), await self.create_test_user_expert()
-
-    async def create_test_client(self):
-        user = await self.create_test_user_client()
-        return await ClientProfile.objects.aget(email=user.email)
-
-    async def create_test_expert(self):
-        user = await self.create_test_user_expert()
-        return await ExpertProfile.objects.aget(email=user.email)
-
-    async def create_test_profiles(self):
-        user_client, user_expert = await self.create_test_users()
-        client = await ClientProfile.objects.aget(email=user_client.email)
-        expert = await ExpertProfile.objects.aget(email=user_expert.email)
-        return client, expert
 
 
 class AuthenticationTests(ProfileCreationMixin, TestCase):
@@ -105,8 +60,8 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
         )
         await profile_expert.education.aadd(education)
         profile_education = await profile_expert.education.aget(id=education.id)
-        self.assertIsNotNone(await profile_education.rel("university"))
-        self.assertIsNotNone(await profile_education.rel("speciality"))
+        self.assertIsNotNone(await rel(profile_education, "university"))
+        self.assertIsNotNone(await rel(profile_education, "speciality"))
         for profile in (profile_client, profile_expert):
             self.assertIsNotNone(profile)
             self.assertFalse(await profile.is_filled)
@@ -138,10 +93,10 @@ class ContractTests(ProfileCreationMixin, TestCase):
             expert_plan_days=14
         )
         self.assertIsNotNone(contract)
-        rel = await contract.rel("client")
-        self.assertEqual(await rel.user_email, await profile_client.user_email)
-        rel = await contract.rel("expert")
-        self.assertEqual(await rel.user_email, await profile_expert.user_email)
-        rel = await contract.rel("client_plan")
-        self.assertEqual(await contract.rel("expert_plan"), subscription_expert)
-        self.assertEqual(rel, subscription_client)
+        profile_test = await rel(contract, "client")
+        self.assertEqual(await profile_test.user_email, await profile_client.user_email)
+        profile_test = await rel(contract, "expert")
+        self.assertEqual(await profile_test.user_email, await profile_expert.user_email)
+        profile_test = await rel(contract, "client_plan")
+        self.assertEqual(await rel(contract, "expert_plan"), subscription_expert)
+        self.assertEqual(profile_test, subscription_client)

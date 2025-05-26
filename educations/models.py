@@ -2,8 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinLengthValidator
 
-from rozumity.utils import rel
-
 from django_countries.fields import CountryField
 
 
@@ -63,9 +61,6 @@ class Education(models.Model):
 
     def __str__(self):
         return f'{self.get_degree_display()}, {self.speciality}, {self.university} ({self.date_start} - {self.date_end})'
-
-    async def rel(self, field_name:str=""):
-        return await rel(self, field_name)
 
     class Meta:
         verbose_name = _("Education")
