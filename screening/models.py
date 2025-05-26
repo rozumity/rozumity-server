@@ -2,8 +2,6 @@ import uuid
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
-from rozumity.utils import rel
-
 
 class CategoryQuestionary(models.Model):
     title = models.CharField(max_length=255, default="")
@@ -46,13 +44,20 @@ class QuestionaryDimension(models.Model):
         return self.title
 
 
-class QuestionaryDimensionScore(models.Model):
+class QuestionaryScore(models.Model):
     dimension = models.ForeignKey(
         QuestionaryDimension, on_delete=models.CASCADE,
         null=True, related_name="results"
     )
     min_score = models.FloatField(default=0)
     max_score = models.FloatField(default=100)
+
+    class Meta:
+        verbose_name = _('Questionary Score')
+        verbose_name_plural = _('Questionary Scores')
+
+    def __str__(self):
+        return self.title
 
 
 class QuestionaryQuestion(models.Model):
@@ -63,18 +68,10 @@ class QuestionaryQuestion(models.Model):
     title = models.CharField(max_length=255, default="")
     text = models.TextField(default="")
     weight = models.FloatField(default=1.0)
-    dimension = models.ForeignKey(
-        QuestionaryDimension, on_delete=models.CASCADE, 
-        related_name="questions", db_index=True
-    )
 
     class Meta:
         verbose_name = _('Questionary Question')
         verbose_name_plural = _('Questionary Questions')
-        indexes = [
-            models.Index(fields=["questionary", "dimension"]),
-        ]
-        unique_together = ('questionary', 'dimension')
 
     def __str__(self):
         return self.title
@@ -87,16 +84,22 @@ class QuestionaryAnswer(models.Model):
     )
     title = models.CharField(max_length=255, default="")
     value = models.FloatField()
+    dimension = models.ForeignKey(
+        QuestionaryDimension, on_delete=models.CASCADE, 
+        related_name="answers", db_index=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = _('Questionary Answer')
         verbose_name_plural = _('Questionary Answers')
+        indexes = [
+            models.Index(fields=["question", "dimension"]),
+        ]
+        unique_together = ('question', 'dimension')
 
     def __str__(self):
         return self.title
-
-    async def rel(self, field_name:str=""):
-        return await rel(self, field_name)
 
 
 class QuestionaryResult(models.Model):
@@ -104,12 +107,9 @@ class QuestionaryResult(models.Model):
     description = models.TextField(default="")
     questionary = models.ForeignKey(
         Questionary, on_delete=models.CASCADE, db_index=True, null=True,
-        related_name="questionary_results"
+        related_name="results"
     )
-    scores = models.ForeignKey(
-        QuestionaryDimensionScore, on_delete=models.CASCADE,
-        null=True, related_name="results"
-    )
+    scores = models.ManyToManyField(QuestionaryScore, related_name="results")
 
     class Meta:
         verbose_name = _('Questionary Result')
@@ -133,7 +133,10 @@ class QuestionaryResponse(models.Model):
         QuestionaryResult, on_delete=models.CASCADE, null=True,
         related_name="responses"
     )
-    answers = models.ManyToManyField(QuestionaryAnswer, blank=True)
+    answers = models.ManyToManyField(
+        QuestionaryAnswer, blank=True,
+        related_name='responses'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -141,10 +144,7 @@ class QuestionaryResponse(models.Model):
         verbose_name_plural = _('Questionary Results')
 
     def __str__(self):
-        return f"{self.client_id} {self.result_info.questionary_id}"
-    
-    async def rel(self, field_name:str=""):
-        return await rel(self, field_name)
+        return f"{self.client_id} - {self.result.questionary.title}"
 
     async def get_score(self, dimension_id):
         score = 0
