@@ -47,7 +47,7 @@ class AbstractProfile(models.Model):
         INTERSEX = 4, _("Intersex")
         HIDE = 5, _("Prefer not to say")
 
-    email = models.OneToOneField(
+    user = models.OneToOneField(
         User, on_delete=models.CASCADE, help_text=_('User Email'), 
         primary_key=True, to_field='email', editable=False
     )
@@ -66,15 +66,15 @@ class AbstractProfile(models.Model):
         abstract=True
 
     def __str__(self):
-        return str(self.email)
+        return str(self.user.email)
 
     @property
     def id(self):
-        return self.email_id
+        return self.user_id
 
     @property
     async def user_email(self):
-        return getattr(await rel(self, 'email'), 'email')
+        return getattr(await rel(self, 'user'), 'email')
     
     @property
     async def name(self):
@@ -306,7 +306,7 @@ class TherapyContract(models.Model):
 
 
 class Diary(models.Model):
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="email")
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, to_field="user")
     theme = models.SmallIntegerField(choices=((0, _('light')), (1, _('dark'))), default=0)
     has_health_attention = models.BooleanField(default=False)
     date_start = models.DateTimeField(default=timezone.now)

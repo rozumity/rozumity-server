@@ -35,13 +35,13 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
         self.assertTrue(admin_user.is_staff)
         self.assertTrue(admin_user.is_superuser)
         self.assertFalse(hasattr(admin_user, "username"))
-        profile = await StaffProfile.objects.aget(email=admin_user.email)
+        profile = await StaffProfile.objects.aget(user=admin_user)
         self.assertIsNotNone(profile)
         self.assertFalse(await profile.is_filled)
         self.assertTrue(await profile.is_empty)
         await profile.adelete()
         with self.assertRaises(ObjectDoesNotExist):
-            await ClientProfile.objects.aget(email=await profile.user_email)
+            await StaffProfile.objects.aget(user=profile.user)
         with self.assertRaises(ObjectDoesNotExist):
             await User.objects.aget(email=await profile.user_email)
 

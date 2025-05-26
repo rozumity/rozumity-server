@@ -26,19 +26,19 @@ class UserSerializer(ModelSerializer):
 
 
 class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
-    email = PrimaryKeyRelatedField(
+    user = PrimaryKeyRelatedField(
         queryset=User.objects.select_related('clientprofile','expertprofile').all()
     )
     country = CountryField()
     gender = CharField(source='get_gender_display')
-    custom_id = "email"
+    custom_id = "user"
 
 
 class ClientProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ClientProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "email")
+        read_only_fields = ('date_birth', "user")
 
 
 class ExpertProfileReadOnlySerializer(
@@ -64,14 +64,14 @@ class ExpertProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "email")
+        read_only_fields = ('date_birth', "user")
 
 
 class StaffProfileSerializer(ProfileSerializerBase):
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "id")
+        read_only_fields = ('date_birth', "user")
 
 # --- Profile
 # Subscription ---
