@@ -17,6 +17,10 @@ class CategoryQuestionaryAdmin(admin.ModelAdmin):
 class QuestionaryDimensionAdmin(admin.ModelAdmin):
     pass
 
+@admin.register(QuestionaryScore)
+class QuestionaryScoreAdmin(admin.ModelAdmin):
+    pass
+
 
 @admin.register(QuestionaryQuestion)
 class QuestionaryQuestionAdmin(admin.ModelAdmin):
