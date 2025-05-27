@@ -25,17 +25,6 @@ class IsProfileOwner(permissions.BasePermission):
             return request.user.email == view.kwargs.get('pk')
 
 
-class IsEducationOwner(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            profile = await get_profile(request)
-            pk = view.kwargs.get('pk')
-            async for education in profile.education.all():
-                if education.id == pk:
-                    return True
-        return False
-
-
 class HasDiaryPermission(permissions.BasePermission):
     async def has_permission(self, request, view):
         has_diary_perm = False
