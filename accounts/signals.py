@@ -2,6 +2,8 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from django.db.utils import IntegrityError
 
+from rozumity.utils import rel
+
 from .models import User, ClientProfile, ExpertProfile, StaffProfile
 
 
@@ -22,5 +24,5 @@ async def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ExpertProfile, dispatch_uid='expertProfile.delete_user')
 @receiver(post_delete, sender=StaffProfile, dispatch_uid='staffProfile.delete_user')
 async def delete_profile(sender, instance, **kwargs):
-    user = await User.objects.aget(email=await instance.user_email)
+    user = await rel(instance, "user")
     await user.adelete()
