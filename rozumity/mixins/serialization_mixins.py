@@ -9,12 +9,12 @@ class CountryFieldMixinAsync(CountryFieldMixin):
 
 class ReadWriteDiffMixin:
     def get_serializer_class(self):
-        read, write = self.serializer_class[0], self.serializer_class[1]
-        if self.request.method == 'GET':
-            self.serializer_class = read
-            return read
-        self.serializer_class = write
-        return write
+        if hasattr(self, 'serializer_class_write'):
+            if self.request.method != 'GET':
+                self.serializer_class = self.serializer_class_write
+                delattr(self, 'serializer_class_write')
+            return self.serializer_class
+        return self.serializer_class
 
 
 class ReadOnlySerializerMixin:
