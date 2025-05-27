@@ -57,18 +57,8 @@ urlpatterns = [
         name="questionaries-responses"
     ),
     path(
-        "questionaries/response/<int:pk>/",
+        "questionaries/response/<uuid:pk>/",
         QuestionaryResponseRetrieveUpdateView.as_view(),
         name="questionaries-response"
     ),
-    path(
-        "questionaries/results/",
-        QuestionaryResultCreateView.as_view(),
-        name="questionaries-results"
-    ),
-    path(
-        "questionaries/result/<int:pk>/",
-        QuestionaryResultRetrieveUpdateView.as_view(),
-        name="questionaries-result"
-    )
 ]

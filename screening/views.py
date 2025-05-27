@@ -9,13 +9,14 @@ from rozumity.mixins.caching_mixins import (
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from rozumity.permissions import *
+from screening.permissions import *
 
 from screening.models import *
 from screening.serializers import *
 
 
 class CategoryQuestionaryListView(
-    CacheLCMixin, ListCreateAPIView
+    CacheListMixin, ListAPIView
 ):
     queryset = CategoryQuestionary.objects.all()
     serializer_class = CategoryQuestionarySerializer
@@ -23,7 +24,7 @@ class CategoryQuestionaryListView(
 
 
 class CategoryQuestionaryRetrieveView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    CacheRetrieveMixin, RetrieveAPIView
 ):
     queryset = CategoryQuestionary.objects.all()
     serializer_class = CategoryQuestionarySerializer
@@ -94,32 +95,19 @@ class QuestionaryAnswerRetrieveView(
     permission_classes = (IsUser,)
 
 
-class QuestionaryResponseCreateView(
-    CacheCreateMixin, CreateAPIView
-):
+class QuestionaryResponseCreateView(CacheCreateMixin, CreateAPIView):
     queryset = QuestionaryResponse.objects.all()
     serializer_class = QuestionaryResponseSerializer
-    permission_classes = (IsCreatorOwner,)
+    permission_classes = (IsResponsePublic,)
 
 
 class QuestionaryResponseRetrieveUpdateView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = QuestionaryResponse.objects.all()
-    serializer_class = QuestionaryResponseSerializer
-    permission_classes = (IsCreatorOwner,)
-
-
-class QuestionaryResultCreateView(CacheCreateMixin, CreateAPIView):
-    queryset = QuestionaryResult.objects.all()
-    serializer_class = QuestionaryResultSerializer
-    permission_classes = (IsCreatorOwner,)
-
-
-class QuestionaryResultRetrieveUpdateView(CacheRUMixin, RetrieveUpdateAPIView):
-    queryset = QuestionaryResult.objects.all()
-    serializer_class = QuestionaryResultSerializer
-    permission_classes = (IsCreatorOwner,)
+    serializer_class = QuestionaryResponseReadOnlySerializer
+    serializer_class_write = QuestionaryResponseSerializer
+    permission_classes = (IsResponsePublic,)
 
 
 class SurveyListCreateView(CacheLCMixin, ListCreateAPIView):
