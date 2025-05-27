@@ -45,6 +45,7 @@ class QuestionaryDimension(models.Model):
 
 
 class QuestionaryScore(models.Model):
+    title = models.CharField(max_length=255, default="")
     dimension = models.ForeignKey(
         QuestionaryDimension, on_delete=models.CASCADE,
         null=True, related_name="results"
@@ -126,25 +127,34 @@ class QuestionaryResponse(models.Model):
     )
     client = models.ForeignKey(
         'accounts.ClientProfile', on_delete=models.PROTECT,
-        null=True, blank=True, related_name="questionary_results",
+        null=True, related_name="questionary_results",
         db_index=True
     )
-    result = models.ForeignKey(
-        QuestionaryResult, on_delete=models.CASCADE, null=True,
+    questionary = models.ForeignKey(
+        Questionary, on_delete=models.CASCADE, null=True,
         related_name="responses"
+    )
+    result = models.ForeignKey(
+        QuestionaryResult, on_delete=models.CASCADE, 
+        null=True, blank=True, related_name="responses"
     )
     answers = models.ManyToManyField(
         QuestionaryAnswer, blank=True,
         related_name='responses'
     )
+    is_public = models.BooleanField(default=False)
+    is_public_expert = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = _('Questionary Result')
-        verbose_name_plural = _('Questionary Results')
+        verbose_name = _('Questionary Response')
+        verbose_name_plural = _('Questionary Responses')
 
     def __str__(self):
-        return f"{self.client_id} - {self.result.questionary.title}"
+        title = "draft"
+        if self.result:
+            title = self.result.questionary.title
+        return f"{self.client_id} - {title}"
 
     async def get_score(self, dimension_id):
         score = 0
