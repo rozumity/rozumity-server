@@ -9,14 +9,11 @@ from rozumity.mixins.caching_mixins import (
     CacheRetrieveMixin, CacheCreateMixin
 )
 
-from rozumity.permissions import *
-from accounts.permissions import (
-    IsExpert, IsEducationOwner
-)
+from accounts.permissions import IsExpert
+from educations.permissions import IsEducationOwner
 
 from educations.models import *
 from educations.serializers import *
-# Create your views here.
 
 
 class UniversityListView(
@@ -72,10 +69,7 @@ class EducationRetrieveUpdateView(
     queryset = Education.objects.select_related(
         "university", "speciality"
     ).all()
-    serializer_class = [
-        EducationReadOnlySerializer,
-        EducationSerializer
-    ]
+    serializer_class = EducationReadOnlySerializer
+    serializer_class_write = EducationSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsEducationOwner,)
-
