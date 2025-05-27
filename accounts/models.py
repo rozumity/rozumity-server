@@ -109,7 +109,13 @@ class ClientProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Profile Client")
         verbose_name_plural = _("Profiles Client")
-        default_related_name = 'clientprofile'
+        default_related_name = "clientprofile"
+    
+    @property
+    async def expert_email(self):
+        contract = await rel(self, "contract")
+        contract = await contract.aget()
+        return contract.expert_id
 
 
 class ExpertProfile(AbstractProfile):
@@ -123,7 +129,13 @@ class ExpertProfile(AbstractProfile):
     class Meta:
         verbose_name = _("Profile Expert")
         verbose_name_plural = _("Profiles Expert")
-        default_related_name = 'expertprofile'
+        default_related_name = "expertprofile"
+    
+    @property
+    async def client_email(self):
+        contract = await rel(self, "contract")
+        contract = await contract.aget()
+        return contract.client_id
 
 
 class StaffProfile(AbstractProfile):
