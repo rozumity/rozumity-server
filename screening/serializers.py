@@ -53,7 +53,7 @@ class QuestionaryAnswerSerializer(
 
 
 class QuestionaryResultSerializer(serializers.ModelSerializer):
-    client = serializers.PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
+    questionary = QuestionarySerializer()
 
     class Meta:
         model = QuestionaryResult
@@ -62,9 +62,9 @@ class QuestionaryResultSerializer(serializers.ModelSerializer):
 
 class QuestionaryResponseSerializer(serializers.ModelSerializer):
     client = serializers.PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
-    question = serializers.PrimaryKeyRelatedField(queryset=QuestionaryQuestion.objects.all())
-    answer = serializers.PrimaryKeyRelatedField(queryset=QuestionaryAnswer.objects.all())
+    questionary = serializers.PrimaryKeyRelatedField(queryset=Questionary.objects.all())
     result = serializers.PrimaryKeyRelatedField(queryset=QuestionaryResult.objects.all())
+    answers = serializers.PrimaryKeyRelatedField(many=True, queryset=QuestionaryAnswer.objects.all())
 
     class Meta:
         model = QuestionaryResponse
@@ -74,8 +74,27 @@ class QuestionaryResponseSerializer(serializers.ModelSerializer):
 class QuestionaryResponseReadOnlySerializer(
     ReadOnlySerializerMixin, QuestionaryResponseSerializer
 ):
-    question = QuestionaryQuestionSerializer()
-    answer = QuestionaryAnswerSerializer()
+    class AnswerSerializer(
+        ReadOnlySerializerMixin, serializers.ModelSerializer
+    ):
+        class QuestionSerializer(
+            ReadOnlySerializerMixin, serializers.ModelSerializer
+        ):
+            class Meta:
+                model = QuestionaryQuestion
+                fields = ("id", "title")
+
+        question = QuestionSerializer()
+        dimension = QuestionaryDimensionSerializer()
+
+        class Meta:
+            model = QuestionaryAnswer
+            fields = "__all__"
+
+    client = serializers.PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
+    questionary = QuestionarySerializer()
+    result = QuestionaryResultSerializer()
+    answers = AnswerSerializer(many=True)
 
     class Meta:
         model = QuestionaryResponse
