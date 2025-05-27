@@ -15,12 +15,12 @@ from educations.models import *
 
 class AuthenticationTests(ProfileCreationMixin, TestCase):
     async def test_create_users(self):
-        user_client, user_expert = await self.create_test_users()
-        self.assertTrue(user_client.is_client)
-        self.assertTrue(user_expert.is_expert)
-        self.assertEqual(user_client.email, self.get_emails()["client"])
-        self.assertEqual(user_expert.email, self.get_emails()["expert"])
-        for user in (user_client, user_expert):
+        emails = self.get_emails()
+        self.assertTrue(self.user_client.is_client)
+        self.assertTrue(self.user_expert.is_expert)
+        self.assertEqual(self.user_client.email, emails["client"])
+        self.assertEqual(self.user_expert.email, emails["expert"])
+        for user in (self.user_client, self.user_expert):
             self.assertTrue(user.is_active)
             self.assertFalse(user.is_staff)
             self.assertFalse(user.is_superuser)
@@ -46,10 +46,9 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
             await User.objects.aget(email=await profile.user_email)
 
     async def test_create_profiles(self):
-        User = await self.get_user_model()
-        profile_client, profile_expert = await self.create_test_profiles()
-        self.assertEqual(await profile_client.user_email, self.get_emails()["client"])
-        self.assertEqual(await profile_expert.user_email, self.get_emails()["expert"])
+        User, emails = await self.get_user_model(), self.get_emails()
+        self.assertEqual(await self.profile_client.user_email, emails["client"])
+        self.assertEqual(await self.profile_expert.user_email, emails["expert"])
         speciality = await Speciality.objects.acreate(
             code=222, title="Medicine", is_medical=True
         )
@@ -58,45 +57,45 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
             university=university, degree=Education.DegreeChoices.DOC,
             speciality=speciality, date_start="2024-05-19", date_end="2020-05-19"
         )
-        await profile_expert.education.aadd(education)
-        profile_education = await profile_expert.education.aget(id=education.id)
+        await self.profile_expert.education.aadd(education)
+        profile_education = await self.profile_expert.education.aget(id=education.id)
         self.assertIsNotNone(await rel(profile_education, "university"))
         self.assertIsNotNone(await rel(profile_education, "speciality"))
-        for profile in (profile_client, profile_expert):
+        for profile in (self.profile_client, self.profile_expert):
             self.assertIsNotNone(profile)
             self.assertFalse(await profile.is_filled)
             self.assertTrue(await profile.is_empty)
             await profile.adelete()
         with self.assertRaises(ObjectDoesNotExist):
-            await ExpertProfile.objects.aget(email=profile_expert.email)
+            await ExpertProfile.objects.aget(user=self.profile_expert.user)
         with self.assertRaises(ObjectDoesNotExist):
-            await User.objects.aget(email=profile_expert.email)
+            await User.objects.aget(email=self.profile_expert.user.email)
         with self.assertRaises(ObjectDoesNotExist):
-            await ClientProfile.objects.aget(email=profile_client.email)
+            await ClientProfile.objects.aget(user=self.profile_client.user)
         with self.assertRaises(ObjectDoesNotExist):
-            await User.objects.aget(email=profile_client.email)
+            await User.objects.aget(email=self.profile_client.user.email)
 
 
 # TODO: test async model props
 class ContractTests(ProfileCreationMixin, TestCase):
     fixtures = ["subscription_plans"]
+
     async def test_contract_create(self):
-        profile_client, profile_expert = await self.create_test_profiles()
         subscription_client = await SubscriptionPlan.objects.aget(id=1)
         subscription_expert = await SubscriptionPlan.objects.aget(id=2)
         contract = await TherapyContract.objects.acreate(
-            client=profile_client,
-            expert=profile_expert,
+            client=self.profile_client,
+            expert=self.profile_expert,
             client_plan=subscription_client,
             expert_plan=subscription_expert,
             client_plan_days=0,
             expert_plan_days=14
         )
         self.assertIsNotNone(contract)
-        profile_test = await rel(contract, "client")
-        self.assertEqual(await profile_test.user_email, await profile_client.user_email)
-        profile_test = await rel(contract, "expert")
-        self.assertEqual(await profile_test.user_email, await profile_expert.user_email)
-        profile_test = await rel(contract, "client_plan")
-        self.assertEqual(await rel(contract, "expert_plan"), subscription_expert)
+        profile_test = contract.client
+        self.assertEqual(await profile_test.user_email, await self.profile_client.user_email)
+        profile_test = contract.expert
+        self.assertEqual(await profile_test.user_email, await self.profile_expert.user_email)
+        profile_test = contract.client_plan
+        self.assertEqual(contract.expert_plan, subscription_expert)
         self.assertEqual(profile_test, subscription_client)
