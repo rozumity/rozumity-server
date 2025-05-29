@@ -117,7 +117,7 @@ class QuestionaryResult(models.Model):
         verbose_name_plural = _('Questionary Results')
 
     def __str__(self):
-        return f"{self.client_id} {self.result_info.questionary_id}"
+        return f"{self.title} - {self.questionary.title}"
 
 
 class QuestionaryResponse(models.Model):
