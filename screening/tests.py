@@ -163,3 +163,32 @@ class ScreeningCreationTests(ProfileCreationMixin, TestCase):
                 headers={"Authorization": f"Bearer {self.token_expert}"}
             )
         self.assertEqual(response.status_code, 403)
+
+    async def test_response_update_put(self):
+        new_result = await QuestionaryResult.objects.acreate(
+            title='result 2', description='desc 2',
+            questionary=self.questionary
+        )
+        async with self.api_client as ac:
+            response = await ac.put(
+                f"/api/screening/questionaries/response/{self.response.pk}/",
+                json={"result": new_result.pk, "client": self.profile_client.pk},
+                headers={"Authorization": f"Bearer {self.token_client}"}
+            )
+        self.assertEqual(response.status_code, 400)
+
+    async def test_response_update_patch(self):
+        new_result = await QuestionaryResult.objects.acreate(
+            title='result 3', description='desc 3',
+            questionary=self.questionary
+        )
+        async with self.api_client as ac:
+            response = await ac.patch(
+                f"/api/screening/questionaries/response/{self.response.pk}/",
+                json={"result": new_result.pk},
+                headers={"Authorization": f"Bearer {self.token_client}"}
+            )
+        updated_response = await QuestionaryResponse.objects.aget(pk=self.response.pk)
+        self.assertEqual(getattr(await rel(updated_response, 'result'), 'pk'), new_result.pk)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("created_at", response.text)
