@@ -14,10 +14,14 @@ class ScreeningCreationTests(ProfileCreationMixin, TestCase):
         cls.category = CategoryQuestionary.objects.create(
             title='category 1', description='description 1'
         )
-        cls.questionary = Questionary.objects.create(
-            title='questionary 1', description='description 1',
-            category = cls.category
+        cls.tag = TagScreening.objects.create(
+            title='tag 1', description='description 1', color='#FFFFFF'
         )
+        cls.questionary = Questionary.objects.create(
+            title='questionary 1', description='description 1'
+        )
+        cls.questionary.categories.set([cls.category])
+        cls.questionary.tags.set([cls.tag])
         cls.question = QuestionaryQuestion.objects.create(
             title='question 1', text='text 1', weight=0.2,
             questionary=cls.questionary,
@@ -25,10 +29,13 @@ class ScreeningCreationTests(ProfileCreationMixin, TestCase):
         cls.dimension = QuestionaryDimension.objects.create(
             title='dimension 1', description='description 1'
         )
-        cls.answer = QuestionaryAnswer.objects.create(
-            question=cls.question, dimension=cls.dimension,
-            title='answer 1', value=5
+        cls.value = QuestionaryAnswerValue.objects.create(
+            dimension=cls.dimension, value=5
         )
+        cls.answer = QuestionaryAnswer.objects.create(
+            question=cls.question, title='answer 1'
+        )
+        cls.answer.values.set([cls.value])
         cls.score1 = QuestionaryScore.objects.create(
             dimension=cls.dimension, max_score=49
         )
@@ -44,18 +51,18 @@ class ScreeningCreationTests(ProfileCreationMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.response = QuestionaryResponse.objects.create(
-            client=self.profile_client, result=self.result
+            client=self.profile_client, result=self.result,
+            questionary=self.questionary
         )
         self.response.answers.set([self.answer])
 
     async def test_create_questionary(self):
-        self.assertEqual(self.questionary.category.title, self.category.title)
         question_test = await self.questionary.questions.aget()
         self.assertEqual(question_test.title, self.question.title)
-        answer_test = await rel(self.dimension, 'answers')
+        answer_test = await rel(self.response, 'answers')
         answer_test = await answer_test.aget()
-        self.assertEqual(answer_test.title, answer_test.title)
-        dimension_test = await rel(answer_test, 'dimension')
+        self.assertEqual(answer_test.title, self.answer.title)
+        dimension_test = await rel(self.value, 'dimension')
         self.assertEqual(dimension_test.title, self.dimension.title)
         result_test = await rel(self.response, 'result')
         self.assertEqual(result_test.title, self.result.title)
@@ -146,6 +153,15 @@ class ScreeningCreationTests(ProfileCreationMixin, TestCase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertIn("answer 1", response.text)
+
+    async def test_response_list(self):
+        async with self.api_client as ac:
+            response = await ac.get(
+                "/api/screening/questionaries/responses/",
+                headers={"Authorization": f"Bearer {self.token_client}"}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("title", response.text)
 
     async def test_response_detail(self):
         async with self.api_client as ac:
