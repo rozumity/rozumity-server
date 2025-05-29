@@ -1,11 +1,5 @@
-from adrf.generics import (
-    ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView,
-    RetrieveUpdateDestroyAPIView, RetrieveAPIView, CreateAPIView
-)
-from rozumity.mixins.caching_mixins import (
-    CacheRUDMixin, CacheRUMixin, CacheLCMixin, 
-    CacheListMixin, CacheRetrieveMixin, CacheCreateMixin
-)
+from adrf.generics import *
+from rozumity.mixins.caching_mixins import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from rozumity.permissions import *
@@ -32,7 +26,7 @@ class CategoryQuestionaryRetrieveView(
 
 
 class QuestionaryListView(
-    CacheLCMixin, ListAPIView
+    CacheListMixin, ListAPIView
 ):
     queryset = Questionary.objects.all()
     serializer_class = QuestionarySerializer
@@ -95,7 +89,9 @@ class QuestionaryAnswerRetrieveView(
     permission_classes = (IsUser,)
 
 
-class QuestionaryResponseCreateView(CacheCreateMixin, CreateAPIView):
+class QuestionaryResponseCreateView(
+    CacheCreateMixin, CreateAPIView
+):
     queryset = QuestionaryResponse.objects.all()
     serializer_class = QuestionaryResponseSerializer
     permission_classes = (IsResponsePublic,)
@@ -105,24 +101,33 @@ class QuestionaryResponseRetrieveUpdateView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = QuestionaryResponse.objects.all()
-    serializer_class = QuestionaryResponseReadOnlySerializer
-    serializer_class_write = QuestionaryResponseSerializer
     permission_classes = (IsResponsePublic,)
+    
+    def get_serializer_class(self):
+        if self.request.method.lower() == 'get':
+            return QuestionaryResponseReadOnlySerializer
+        return QuestionaryResponseSerializer
 
 
-class SurveyListCreateView(CacheLCMixin, ListCreateAPIView):
+class SurveyListView(
+    CacheListMixin, ListAPIView
+):
     queryset = Survey.objects.all()
     serializer_class = SurveySerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyRetrieveUpdateDestroyView(CacheRUDMixin, RetrieveUpdateDestroyAPIView):
+class SurveyRetrieveView(
+    CacheRetrieveMixin, RetrieveAPIView
+):
     queryset = Survey.objects.all()
     serializer_class = SurveySerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyThemeListCreateView(CacheLCMixin, ListCreateAPIView):
+class SurveyThemeListCreateView(
+    CacheLCMixin, ListCreateAPIView
+):
     queryset = SurveyTheme.objects.all()
     serializer_class = SurveyThemeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -134,19 +139,25 @@ class SurveyThemeRetrieveUpdateDestroyView(CacheRUDMixin, RetrieveUpdateDestroyA
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyResultListCreateView(CacheLCMixin, ListCreateAPIView):
+class SurveyResultCreateView(
+    CacheCreateMixin, CreateAPIView
+):
     queryset = SurveyResult.objects.all()
     serializer_class = SurveyResultSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyResultRetrieveUpdateDestroyView(CacheRUDMixin, RetrieveUpdateDestroyAPIView):
+class SurveyResultRetrieveUpdateView(
+    CacheRUMixin, RetrieveUpdateAPIView
+):
     queryset = SurveyResult.objects.all()
     serializer_class = SurveyResultSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyEntryListCreateView(CacheLCMixin, ListCreateAPIView):
+class SurveyEntryCreateView(
+    CacheCreateMixin, CreateAPIView
+):
     queryset = SurveyEntry.objects.all()
     serializer_class = SurveyEntrySerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)

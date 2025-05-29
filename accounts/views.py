@@ -1,14 +1,12 @@
 from adrf.generics import (
-    ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView,
-    RetrieveUpdateDestroyAPIView, 
-    RetrieveAPIView, CreateAPIView
+    ListAPIView, RetrieveUpdateAPIView,
+    RetrieveAPIView, CreateAPIView, UpdateAPIView
 )
 from rozumity.throttling import UserRateAsyncThrottle
 
-from rozumity.mixins.serialization_mixins import ReadWriteDiffMixin
 from rozumity.mixins.caching_mixins import (
-    CacheRUDMixin, CacheRUMixin, CacheLCMixin, 
-    CacheListMixin, CacheRetrieveMixin, CacheCreateMixin
+    CacheRUMixin, CacheUpdateMixin, CacheListMixin, 
+    CacheRetrieveMixin, CacheCreateMixin
 )
 
 from rozumity.permissions import *
@@ -46,15 +44,16 @@ class ClientProfileRetrieveUpdateView(
 
 
 class ExpertProfileRetrieveUpdateView(
-    CacheRUMixin, ReadWriteDiffMixin, RetrieveUpdateAPIView
+    CacheRUMixin, RetrieveUpdateAPIView
 ):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     permission_classes = (IsProfileOwner,)
     throttle_classes = (UserRateAsyncThrottle,)
-    serializer_class = (
-        ExpertProfileReadOnlySerializer, 
-        ExpertProfileSerializer
-    )
+    
+    def get_serializer_class(self):
+        if self.request.method.lower() == 'get':
+            return ExpertProfileReadOnlySerializer
+        return ExpertProfileSerializer
 
 
 class SubscriptionPlanListView(

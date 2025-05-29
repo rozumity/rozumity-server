@@ -2,9 +2,10 @@ from hashlib import md5
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from rest_framework.response import Response
+from adrf.viewsets import GenericViewSet
 
 
-class CacheMixinBase:
+class CacheMixinBase(GenericViewSet):
     async def _generate_cache_key(self, request=None):
         cache_key = request.get_full_path() if request else self.__class__.__name__.lower()
         self.cache_key = md5(cache_key.encode()).hexdigest()
