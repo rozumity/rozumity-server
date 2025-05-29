@@ -1,37 +1,16 @@
 from django.contrib import admin
-from django import forms
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import (
+from accounts.models import (
     User, ClientProfile, ExpertProfile, StaffProfile, 
     TherapyContract, SubscriptionPlan
 )
-from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.forms import CustomUserCreationForm
 
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    class CustomUserCreationForm(forms.ModelForm):
-        email = forms.EmailField(label='E-Mail')
-        password = forms.CharField(label='Password', widget=forms.PasswordInput)
-        is_client = forms.BooleanField(label='Is Client', required=False)
-        is_staff = forms.BooleanField(label='Is Staff', required=False)
-        is_expert = forms.BooleanField(label='Is Expert', required=False)
-        is_superuser = forms.BooleanField(label='Is Superuser', required=False)
-        
-        class Meta:
-            model = get_user_model()
-            fields = ('email', 'password', 'is_client', 'is_expert', 'is_superuser')
-
-        def save(self, commit=True):
-            user = super().save(commit=False)
-            user.set_password(self.cleaned_data["password"])
-            if commit:
-                user.save()
-
-            return user
-
     def jwt_tokens(self, obj):
         refresh = RefreshToken.for_user(obj)
         access_token = str(refresh.access_token)
@@ -48,6 +27,7 @@ class CustomUserAdmin(UserAdmin):
         )
 
     jwt_tokens.short_description = "JWT Tokens"
+
     add_form = CustomUserCreationForm
 
     list_display = ('email', 'date_joined', 'is_client', 'is_expert', 'is_staff', 'is_active')
