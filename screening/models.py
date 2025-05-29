@@ -172,7 +172,6 @@ class QuestionaryResponse(models.Model):
     )
     is_public = models.BooleanField(default=False)
     is_public_expert = models.BooleanField(default=False)
-    is_filled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -185,16 +184,18 @@ class QuestionaryResponse(models.Model):
             title = self.result.questionary.title
         return f"{self.client_id} - {title}"
     
-    async def check_is_filled(self):
+    @property
+    async def is_filled(self):
         questionary = await rel(self, 'questionary')
-        questions = rel(questionary, 'questions')
+        questions = await rel(questionary, 'questions')
         answers = await rel(self, 'answers')
-        if await questions.objects.acount() == await answers.objects.acount():
+        if await questions.all().acount() == await answers.all().acount():
             return {
-                question.title async for question in questions
+                question.id async for question in questions.all()
             } == {
-                answer.question.id async for answer in answers
+                answer.question_id async for answer in answers.all()
             }
+        return False
         
 
     async def get_score_by_dimension(self, dimension_id):
@@ -205,12 +206,12 @@ class QuestionaryResponse(models.Model):
                     score += value.value
         return score
 
-    @async_cached_property
+    @property
     async def total_score(self):
         score = {}
-        async for answer in await self.answers:
+        async for answer in self.answers.all():
             weight = getattr(await rel(answer, 'question'), 'weight')
-            async for value in answer.values:
+            async for value in answer.values.all():
                 dim_id = value.dimension_id
                 if dim_id not in score.keys():
                     score[dim_id] = 0
