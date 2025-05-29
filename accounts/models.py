@@ -115,7 +115,8 @@ class ClientProfile(AbstractProfile):
     async def expert_email(self):
         contract = await rel(self, "contract")
         contract = await contract.aget()
-        return contract.expert_id
+        if contract:
+            return contract.expert_id
 
 
 class ExpertProfile(AbstractProfile):
