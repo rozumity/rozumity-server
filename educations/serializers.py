@@ -31,7 +31,6 @@ class UniversitySerializer(CountryFieldMixin, ModelSerializer):
 class EducationSerializer(ModelSerializer):
     university = PrimaryKeyRelatedField(queryset=University.objects.all(), required=False)
     speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all(), required=False)
-    degree = CharField(source='get_degree_display')
 
     class Meta:
         model = Education
@@ -41,3 +40,4 @@ class EducationSerializer(ModelSerializer):
 class EducationReadOnlySerializer(ReadOnlySerializerMixin, EducationSerializer):
     university = UniversitySerializer()
     speciality = SpecialitySerializer()
+    degree_display = CharField(source='get_degree_display', read_only=True)

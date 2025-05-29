@@ -83,6 +83,11 @@ class EducationListCreateView(
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsExpert,)
 
+    def get_serializer_class(self):
+        if self.request.method.lower() == 'get':
+            return EducationReadOnlySerializer
+        return EducationSerializer
+
 
 class EducationRetrieveUpdateView(
     ReadUpdateMixin, RetrieveUpdateAPIView
@@ -95,7 +100,10 @@ class EducationRetrieveUpdateView(
     queryset = Education.objects.select_related(
         "university", "speciality"
     ).all()
-    serializer_class = EducationReadOnlySerializer
-    serializer_class_write = EducationSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsEducationOwner,)
+
+    def get_serializer_class(self):
+        if self.request.method.lower() == 'get':
+            return EducationReadOnlySerializer
+        return EducationSerializer
