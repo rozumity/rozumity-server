@@ -90,11 +90,7 @@ class QuestionaryResponseSerializer(ModelSerializer):
         instance = await ModelSerializer.aupdate(self, instance, validated_data)
         if await instance.is_filled:
             total_score = await instance.total_score
-            results = (
-                QuestionaryResult.objects
-                .annotate(scores_count=models.Count('scores'))
-                .filter(scores_count=len(total_score))
-            )
+            results = QuestionaryResult.objects.filter(questionary=instance.questionary)
             for dim_id, score in total_score.items():
                 results = results.filter(
                     scores__dimension_id=dim_id,
