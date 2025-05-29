@@ -8,7 +8,7 @@ class IsResponsePublic(BasePermission):
             return False
         if request.method == "POST":
             return request.user.email == request.data.email
-        elif request.method in ["GET", "PUT", "PATCH"]:
+        elif request.method in ["GET", "PUT", "PATCH"] and "pk" in view.kwargs.keys():
             email = request.user.email
             model = view.get_serializer_class().Meta.model
             obj = await model.objects.aget(**{
@@ -21,4 +21,5 @@ class IsResponsePublic(BasePermission):
                 return True
             if obj.is_public_expert and await client.expert_email == email:
                 return True
-        return False
+            return False
+        return True
