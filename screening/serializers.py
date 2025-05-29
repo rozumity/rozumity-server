@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from adrf.serializers import ModelSerializer
 from accounts.serializers import ClientProfileSerializer
 from accounts.models import ClientProfile
 from screening.models import *
@@ -6,7 +7,7 @@ from rozumity.mixins.serialization_mixins import ReadOnlySerializerMixin
 
 
 class CategoryQuestionarySerializer(
-    ReadOnlySerializerMixin, serializers.ModelSerializer
+    ReadOnlySerializerMixin, ModelSerializer
 ):
     class Meta:
         model = CategoryQuestionary
@@ -14,7 +15,7 @@ class CategoryQuestionarySerializer(
 
 
 class QuestionarySerializer(
-    ReadOnlySerializerMixin, serializers.ModelSerializer
+    ReadOnlySerializerMixin, ModelSerializer
 ):
     category = CategoryQuestionarySerializer()
 
@@ -24,7 +25,7 @@ class QuestionarySerializer(
 
 
 class QuestionaryDimensionSerializer(
-    ReadOnlySerializerMixin, serializers.ModelSerializer
+    ReadOnlySerializerMixin, ModelSerializer
 ):
     class Meta:
         model = QuestionaryDimension
@@ -32,7 +33,7 @@ class QuestionaryDimensionSerializer(
 
 
 class QuestionaryQuestionSerializer(
-    ReadOnlySerializerMixin, serializers.ModelSerializer
+    ReadOnlySerializerMixin, ModelSerializer
 ):
     questionary = QuestionarySerializer()
 
@@ -42,7 +43,7 @@ class QuestionaryQuestionSerializer(
 
 
 class QuestionaryAnswerSerializer(
-    ReadOnlySerializerMixin, serializers.ModelSerializer
+    ReadOnlySerializerMixin, ModelSerializer
 ):
     question = QuestionaryQuestionSerializer()
     dimension = QuestionaryDimensionSerializer()
@@ -52,7 +53,7 @@ class QuestionaryAnswerSerializer(
         fields = "__all__"
 
 
-class QuestionaryResultSerializer(serializers.ModelSerializer):
+class QuestionaryResultSerializer(ModelSerializer):
     questionary = QuestionarySerializer()
 
     class Meta:
@@ -60,7 +61,7 @@ class QuestionaryResultSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class QuestionaryResponseSerializer(serializers.ModelSerializer):
+class QuestionaryResponseSerializer(ModelSerializer):
     client = serializers.PrimaryKeyRelatedField(queryset=ClientProfile.objects.all())
     questionary = serializers.PrimaryKeyRelatedField(queryset=Questionary.objects.all())
     result = serializers.PrimaryKeyRelatedField(queryset=QuestionaryResult.objects.all())
@@ -101,13 +102,13 @@ class QuestionaryResponseReadOnlySerializer(
         fields = "__all__"
 
 
-class SurveySerializer(serializers.ModelSerializer):
+class SurveySerializer(ModelSerializer):
     class Meta:
         model = Survey
         fields = "__all__"
 
 
-class SurveyThemeSerializer(serializers.ModelSerializer):
+class SurveyThemeSerializer(ModelSerializer):
     survey = serializers.PrimaryKeyRelatedField(queryset=Survey.objects.all())
 
     class Meta:
@@ -115,7 +116,7 @@ class SurveyThemeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class SurveyResultSerializer(serializers.ModelSerializer):
+class SurveyResultSerializer(ModelSerializer):
     client = ClientProfileSerializer(read_only=True)
     survey = serializers.PrimaryKeyRelatedField(queryset=Survey.objects.all())
 
@@ -124,7 +125,7 @@ class SurveyResultSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class SurveyEntrySerializer(serializers.ModelSerializer):
+class SurveyEntrySerializer(ModelSerializer):
     theme = serializers.PrimaryKeyRelatedField(queryset=SurveyTheme.objects.all())
     result = serializers.PrimaryKeyRelatedField(queryset=SurveyResult.objects.all())
 
