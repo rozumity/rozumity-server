@@ -19,10 +19,13 @@ class IsContractSigner(permissions.BasePermission):
             return request.user.email in (obj.client_id, obj.expert_id)
 
 
-class IsProfileOwner(permissions.BasePermission):
+class IsProfileOwnerWriteAuthRead(permissions.BasePermission):
     async def has_permission(self, request, view):
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and request.method == "GET":
+            return True
+        elif request.user.is_authenticated:
             return request.user.email == view.kwargs.get('pk')
+        return False
 
 
 class HasDiaryPermission(permissions.BasePermission):
