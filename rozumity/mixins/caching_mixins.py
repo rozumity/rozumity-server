@@ -1,24 +1,35 @@
 from hashlib import md5
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
+from rest_framework import status
 from rest_framework.response import Response
-from adrf.viewsets import GenericViewSet
 
 
-class CacheMixinBase(GenericViewSet):
-    async def _generate_cache_key(self, request=None):
-        cache_key = request.get_full_path() if request else self.__class__.__name__.lower()
-        self.cache_key = md5(cache_key.encode()).hexdigest()
+class CacheMixinBase:
+    async def _generate_cache_key(self):
+        self.cache_key = md5(self.__class__.__name__.lower().encode()).hexdigest()
+        return self.cache_key
+
+    async def _generate_request_cache_key(self, request):
+        self.cache_key = md5(self.__class__.__name__.lower().encode()).hexdigest()
         return self.cache_key
 
 
-class CacheListMixin(CacheMixinBase):
-    async def alist(self, request, *args, **kwargs):
-        cache_key_page = await self._generate_cache_key(request)
+class ListMixin(CacheMixinBase):
+    async def get(self, request, *args, **kwargs):
+        cache_key_page = await self._generate_request_cache_key(request)
         cache_key = await self._generate_cache_key()
-
         if not await cache.ahas_key(cache_key_page):
-            resp = await sync_to_async(self.list)(request, *args, **kwargs)
+            queryset = self.filter_queryset(self.get_queryset())
+            page = await self.apaginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = await sync_to_async(getattr)(serializer, 'data')
+                resp = await self.get_apaginated_response(data)
+            else:
+                serializer = self.get_serializer(queryset, many=True)
+                data = await sync_to_async(getattr)(serializer, 'data')
+                resp = Response(data, status=status.HTTP_200_OK)
             data_ids, cached_data= [], {}
             id_name = self.serializer_class.custom_id if hasattr(self.serializer_class, "custom_id") else "id"
             for item in resp.data["results"]:
@@ -47,9 +58,14 @@ class CacheListMixin(CacheMixinBase):
         return Response(data)
 
 
-class CacheCreateMixin(CacheMixinBase):
-    async def acreate(self, request, *args, **kwargs):
-        resp = await sync_to_async(self.create)(request, *args, **kwargs)
+class CreateMixin(CacheMixinBase):
+    async def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        await sync_to_async(serializer.is_valid)(raise_exception=True)
+        await serializer.asave()
+        data = await sync_to_async(getattr)(serializer, 'data')
+        headers = await sync_to_async(self.get_success_headers)(data)
+        resp = Response(data, status=status.HTTP_201_CREATED, headers=headers)
         id_name = self.serializer_class.custom_id if hasattr(self.serializer_class, "custom_id") else "id"
         try:
             cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
@@ -59,58 +75,74 @@ class CacheCreateMixin(CacheMixinBase):
         return resp
 
 
-class CacheRetrieveMixin(CacheMixinBase):
-    async def aretrieve(self, request, *args, **kwargs):
+class RetrieveMixin(CacheMixinBase):
+    async def get(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key))
         else:
-            resp = await sync_to_async(self.retrieve)(request, *args, **kwargs)
+            resp = Response(await sync_to_async(getattr)(
+                self.get_serializer(await self.aget_object(), many=False), 
+                'data'
+            ), status=status.HTTP_200_OK)
             await cache.aset(cache_key, resp.data)
             return resp
 
 
-class CacheUpdateMixin(CacheMixinBase):
+class UpdateMixin(CacheMixinBase):
+    async def aupdate(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = await self.aget_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        await sync_to_async(serializer.is_valid)(raise_exception=True)
+        await serializer.asave()
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+        data = await sync_to_async(getattr)(serializer, 'data')
+        return Response(data, status=status.HTTP_200_OK)
+
     async def patch(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
-        resp = await sync_to_async(self.partial_update)(request, *args, **kwargs)
+        kwargs["partial"] = True
+        resp = await self.aupdate(request, *args, **kwargs)
         await cache.aset(cache_key, resp.data)
         return resp
 
-    async def aupdate(self, request, *args, **kwargs):
+    async def put(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
-        resp = await sync_to_async(self.update)(request, *args, **kwargs)
+        resp = await self.aupdate(request, *args, **kwargs)
         await cache.aset(cache_key, resp.data)
         return resp
 
 
-class CacheDestroyMixin(CacheMixinBase):
-    async def adestroy(self, request, *args, **kwargs):
+class DestroyMixin(CacheMixinBase):
+    async def delete(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs["pk"]}"
-        resp = await sync_to_async(self.destroy(request, *args, **kwargs))
+        instance = await self.aget_object()
+        await instance.adelete()
+        resp = Response(status=status.HTTP_204_NO_CONTENT)
         if await cache.ahas_key(cache_key):
             await cache.adelete(cache_key, resp.data)
         return resp
 
 
-class CacheLCMixin(CacheListMixin, CacheCreateMixin):
+class ListCreateMixin(ListMixin, CreateMixin):
     pass
 
 
-class CacheRUMixin(CacheRetrieveMixin, CacheUpdateMixin):
+class ReadUpdateMixin(RetrieveMixin, UpdateMixin):
     pass
 
 
-class CacheRDMixin(CacheRetrieveMixin, CacheDestroyMixin):
+class RetrieveDestroyMixin(RetrieveMixin, DestroyMixin):
     pass
 
 
-class CacheRUDMixin(CacheRetrieveMixin, CacheUpdateMixin, CacheDestroyMixin):
+class RetrieveUpdateDestroyMixin(RetrieveMixin, UpdateMixin, DestroyMixin):
     pass
 
 
 class CacheMixin(
-    CacheListMixin, CacheCreateMixin, CacheRetrieveMixin, 
-    CacheUpdateMixin, CacheDestroyMixin
+    ListMixin, CreateMixin, RetrieveMixin, UpdateMixin, DestroyMixin
 ):
     pass

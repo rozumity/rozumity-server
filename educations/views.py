@@ -5,8 +5,8 @@ from adrf.generics import (
 from rozumity.throttling import UserRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    CacheRUMixin, CacheListMixin, 
-    CacheRetrieveMixin, CacheLCMixin
+    ReadUpdateMixin, ListMixin, 
+    RetrieveMixin, ListCreateMixin
 )
 from rozumity.mixins.filtering_mixins import OwnedList
 
@@ -18,7 +18,7 @@ from educations.serializers import *
 
 
 class UniversityListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all universities.
@@ -31,7 +31,7 @@ class UniversityListView(
 
 
 class UniversityRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single university by its ID.
@@ -44,7 +44,7 @@ class UniversityRetrieveView(
 
 
 class SpecialityListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all specialities.
@@ -57,7 +57,7 @@ class SpecialityListView(
 
 
 class SpecialityRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a list of all specialities.
@@ -70,7 +70,7 @@ class SpecialityRetrieveView(
 
 
 class EducationListCreateView(
-    OwnedList, CacheLCMixin, ListCreateAPIView
+    OwnedList, ListCreateMixin, ListCreateAPIView
 ):
     """
     API view to retrieve a list of all specialities.
@@ -85,7 +85,7 @@ class EducationListCreateView(
 
 
 class EducationRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, RetrieveUpdateAPIView
 ):
     """
     API view to retrieve a list of all specialities.

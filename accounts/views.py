@@ -5,8 +5,8 @@ from adrf.generics import (
 from rozumity.throttling import UserRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    CacheRUMixin, CacheListMixin, 
-    CacheRetrieveMixin, CacheCreateMixin
+    ReadUpdateMixin, ListMixin, 
+    RetrieveMixin, CreateMixin
 )
 
 from rozumity.permissions import *
@@ -19,7 +19,7 @@ from .serializers import *
 
 
 class UserListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all users.
@@ -31,7 +31,7 @@ class UserListView(
 
 
 class UserRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single user by their ID.
@@ -43,7 +43,7 @@ class UserRetrieveView(
 
 
 class ClientProfileRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, RetrieveUpdateAPIView
 ):
     """
     API view to retrieve or update a client profile.
@@ -56,7 +56,7 @@ class ClientProfileRetrieveUpdateView(
 
 
 class ExpertProfileRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, RetrieveUpdateAPIView
 ):
     """
     API view to retrieve or update an expert profile.
@@ -73,7 +73,7 @@ class ExpertProfileRetrieveUpdateView(
 
 
 class SubscriptionPlanListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all subscription plans.
@@ -86,7 +86,7 @@ class SubscriptionPlanListView(
 
 
 class SubscriptionPlanRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single subscription plan by its ID.
@@ -99,7 +99,7 @@ class SubscriptionPlanRetrieveView(
 
 
 class TherapyContractCreateView(
-    CacheCreateMixin, CreateAPIView
+    CreateMixin, CreateAPIView
 ):
     """
     API view to create a new therapy contract.
@@ -114,7 +114,7 @@ class TherapyContractCreateView(
 
 
 class TherapyContractRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, RetrieveUpdateAPIView
 ):
     """
     API view to retrieve or update a therapy contract by its ID.

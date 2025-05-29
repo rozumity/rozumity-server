@@ -11,7 +11,7 @@ from screening.serializers import *
 
 
 class CategoryQuestionaryListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all questionary categories.
@@ -22,7 +22,7 @@ class CategoryQuestionaryListView(
 
 
 class CategoryQuestionaryRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single questionary category by its ID.
@@ -33,7 +33,7 @@ class CategoryQuestionaryRetrieveView(
 
 
 class QuestionaryListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all questionaries.
@@ -44,7 +44,7 @@ class QuestionaryListView(
 
 
 class QuestionaryRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single questionary by its ID.
@@ -55,7 +55,7 @@ class QuestionaryRetrieveView(
 
 
 class QuestionaryDimensionListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all questionary dimensions.
@@ -66,7 +66,7 @@ class QuestionaryDimensionListView(
 
 
 class QuestionaryDimensionRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single questionary dimension by its ID.
@@ -77,7 +77,7 @@ class QuestionaryDimensionRetrieveView(
 
 
 class QuestionaryQuestionListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all questions for questionaries.
@@ -88,7 +88,7 @@ class QuestionaryQuestionListView(
 
 
 class QuestionaryQuestionRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single question for a questionary by its ID.
@@ -99,7 +99,7 @@ class QuestionaryQuestionRetrieveView(
 
 
 class QuestionaryAnswerListCreateView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     """
     API view to retrieve a list of all possible answers for questionary questions.
@@ -110,7 +110,7 @@ class QuestionaryAnswerListCreateView(
 
 
 class QuestionaryAnswerRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     """
     API view to retrieve a single answer for a questionary question by its ID.
@@ -121,7 +121,7 @@ class QuestionaryAnswerRetrieveView(
 
 
 class QuestionaryResponseListCreateView(
-    OwnedList, CacheLCMixin, ListCreateAPIView
+    OwnedList, ListCreateMixin, ListCreateAPIView
 ):
     """
     API view to list and create questionary responses.
@@ -138,7 +138,7 @@ class QuestionaryResponseListCreateView(
 
 
 class QuestionaryResponseRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, GenericAPIView
 ):
     """
     API view to retrieve and update a single questionary response by its ID.
@@ -154,7 +154,7 @@ class QuestionaryResponseRetrieveUpdateView(
 
 
 class SurveyListView(
-    CacheListMixin, ListAPIView
+    ListMixin, ListAPIView
 ):
     queryset = Survey.objects.all()
     serializer_class = SurveySerializer
@@ -162,7 +162,7 @@ class SurveyListView(
 
 
 class SurveyRetrieveView(
-    CacheRetrieveMixin, RetrieveAPIView
+    RetrieveMixin, RetrieveAPIView
 ):
     queryset = Survey.objects.all()
     serializer_class = SurveySerializer
@@ -170,21 +170,21 @@ class SurveyRetrieveView(
 
 
 class SurveyThemeListCreateView(
-    CacheLCMixin, ListCreateAPIView
+    ListCreateMixin, ListCreateAPIView
 ):
     queryset = SurveyTheme.objects.all()
     serializer_class = SurveyThemeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyThemeRetrieveUpdateDestroyView(CacheRUDMixin, RetrieveUpdateDestroyAPIView):
+class SurveyThemeRetrieveUpdateDestroyView(RetrieveUpdateDestroyMixin, RetrieveUpdateDestroyAPIView):
     queryset = SurveyTheme.objects.all()
     serializer_class = SurveyThemeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 class SurveyResultCreateView(
-    CacheCreateMixin, CreateAPIView
+    CreateMixin, CreateAPIView
 ):
     queryset = SurveyResult.objects.all()
     serializer_class = SurveyResultSerializer
@@ -192,7 +192,7 @@ class SurveyResultCreateView(
 
 
 class SurveyResultRetrieveUpdateView(
-    CacheRUMixin, RetrieveUpdateAPIView
+    ReadUpdateMixin, RetrieveUpdateAPIView
 ):
     queryset = SurveyResult.objects.all()
     serializer_class = SurveyResultSerializer
@@ -200,14 +200,14 @@ class SurveyResultRetrieveUpdateView(
 
 
 class SurveyEntryCreateView(
-    CacheCreateMixin, CreateAPIView
+    CreateMixin, CreateAPIView
 ):
     queryset = SurveyEntry.objects.all()
     serializer_class = SurveyEntrySerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class SurveyEntryRetrieveUpdateDestroyView(CacheRUDMixin, RetrieveUpdateDestroyAPIView):
+class SurveyEntryRetrieveUpdateDestroyView(RetrieveUpdateDestroyMixin, RetrieveUpdateDestroyAPIView):
     queryset = SurveyEntry.objects.all()
     serializer_class = SurveyEntrySerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
