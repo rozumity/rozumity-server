@@ -5,7 +5,7 @@ from educations import views
 app_name = 'educations'
 
 router = routers.DefaultRouter()
-router.register(r'educations', views.EducationCreateView, basename='educations')
+router.register(r'educations', views.EducationListCreateView, basename='educations')
 router.register(r'education', views.EducationRetrieveUpdateView, basename='education')
 router.register(r'universities', views.UniversityListView, basename='universities')
 router.register(r'university', views.UniversityRetrieveView, basename='university')
