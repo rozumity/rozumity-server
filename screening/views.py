@@ -3,6 +3,7 @@ from rozumity.mixins.caching_mixins import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from rozumity.permissions import *
+from rozumity.mixins.filtering_mixins import OwnedList
 from screening.permissions import *
 
 from screening.models import *
@@ -12,6 +13,9 @@ from screening.serializers import *
 class CategoryQuestionaryListView(
     CacheListMixin, ListAPIView
 ):
+    """
+    API view to retrieve a list of all questionary categories.
+    """
     queryset = CategoryQuestionary.objects.all()
     serializer_class = CategoryQuestionarySerializer
     permission_classes = (IsUser,)
@@ -20,6 +24,9 @@ class CategoryQuestionaryListView(
 class CategoryQuestionaryRetrieveView(
     CacheRetrieveMixin, RetrieveAPIView
 ):
+    """
+    API view to retrieve a single questionary category by its ID.
+    """
     queryset = CategoryQuestionary.objects.all()
     serializer_class = CategoryQuestionarySerializer
     permission_classes = (IsUser,)
@@ -28,6 +35,9 @@ class CategoryQuestionaryRetrieveView(
 class QuestionaryListView(
     CacheListMixin, ListAPIView
 ):
+    """
+    API view to retrieve a list of all questionaries.
+    """
     queryset = Questionary.objects.all()
     serializer_class = QuestionarySerializer
     permission_classes = (IsUser,)
@@ -36,6 +46,9 @@ class QuestionaryListView(
 class QuestionaryRetrieveView(
     CacheRetrieveMixin, RetrieveAPIView
 ):
+    """
+    API view to retrieve a single questionary by its ID.
+    """
     queryset = Questionary.objects.all()
     serializer_class = QuestionarySerializer
     permission_classes = (IsUser,)
@@ -44,6 +57,9 @@ class QuestionaryRetrieveView(
 class QuestionaryDimensionListView(
     CacheListMixin, ListAPIView
 ):
+    """
+    API view to retrieve a list of all questionary dimensions.
+    """
     queryset = QuestionaryDimension.objects.all()
     serializer_class = QuestionaryDimensionSerializer
     permission_classes = (IsUser,)
@@ -52,14 +68,20 @@ class QuestionaryDimensionListView(
 class QuestionaryDimensionRetrieveView(
     CacheRetrieveMixin, RetrieveAPIView
 ):
+    """
+    API view to retrieve a single questionary dimension by its ID.
+    """
     queryset = QuestionaryDimension.objects.all()
     serializer_class = QuestionaryDimensionSerializer
     permission_classes = (IsUser,)
 
 
-class QuestionaryQuestionListCreateView(
+class QuestionaryQuestionListView(
     CacheListMixin, ListAPIView
 ):
+    """
+    API view to retrieve a list of all questions for questionaries.
+    """
     queryset = QuestionaryQuestion.objects.all()
     serializer_class = QuestionaryQuestionSerializer
     permission_classes = (IsUser,)
@@ -68,6 +90,9 @@ class QuestionaryQuestionListCreateView(
 class QuestionaryQuestionRetrieveView(
     CacheRetrieveMixin, RetrieveAPIView
 ):
+    """
+    API view to retrieve a single question for a questionary by its ID.
+    """
     queryset = QuestionaryQuestion.objects.all()
     serializer_class = QuestionaryQuestionSerializer
     permission_classes = (IsUser,)
@@ -76,6 +101,9 @@ class QuestionaryQuestionRetrieveView(
 class QuestionaryAnswerListCreateView(
     CacheListMixin, ListAPIView
 ):
+    """
+    API view to retrieve a list of all possible answers for questionary questions.
+    """
     queryset = QuestionaryAnswer.objects.all()
     serializer_class = QuestionaryAnswerSerializer
     permission_classes = (IsUser,)
@@ -84,22 +112,38 @@ class QuestionaryAnswerListCreateView(
 class QuestionaryAnswerRetrieveView(
     CacheRetrieveMixin, RetrieveAPIView
 ):
+    """
+    API view to retrieve a single answer for a questionary question by its ID.
+    """
     queryset = QuestionaryAnswer.objects.all()
     serializer_class = QuestionaryAnswerSerializer
     permission_classes = (IsUser,)
 
 
-class QuestionaryResponseCreateView(
-    CacheCreateMixin, CreateAPIView
+class QuestionaryResponseListCreateView(
+    OwnedList, CacheLCMixin, ListCreateAPIView
 ):
+    """
+    API view to list and create questionary responses.
+    Uses ownership filtering.
+    """
     queryset = QuestionaryResponse.objects.all()
     serializer_class = QuestionaryResponseSerializer
     permission_classes = (IsResponsePublic,)
+    
+    def get_serializer_class(self):
+        if self.request.method.lower() == 'get':
+            return QuestionaryResponseReadOnlySerializer
+        return QuestionaryResponseSerializer
 
 
 class QuestionaryResponseRetrieveUpdateView(
     CacheRUMixin, RetrieveUpdateAPIView
 ):
+    """
+    API view to retrieve and update a single questionary response by its ID.
+    Uses ownership access.
+    """
     queryset = QuestionaryResponse.objects.all()
     permission_classes = (IsResponsePublic,)
     
