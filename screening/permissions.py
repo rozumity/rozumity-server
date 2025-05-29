@@ -10,16 +10,15 @@ class IsResponsePublic(BasePermission):
             return request.user.email == request.data.email
         elif request.method in ["GET", "PUT", "PATCH"]:
             email = request.user.email
-            model = view.serializer_class.Meta.model
+            model = view.get_serializer_class().Meta.model
             obj = await model.objects.aget(**{
                 model._meta.pk.name: view.kwargs.get('pk')
             })
             client = await rel(obj, "client")
-            is_client_owner = await client.user_email == email
+            if await client.user_email == email:
+                return True
             if obj.is_public and request.method == "GET":
                 return True
-            elif obj.is_public_expert and await client.expert_email == email:
+            if obj.is_public_expert and await client.expert_email == email:
                 return True
-            else:
-                return is_client_owner
         return False
