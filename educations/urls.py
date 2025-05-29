@@ -1,17 +1,13 @@
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
 from educations import views
 
 app_name = 'educations'
 
-router = routers.DefaultRouter()
-router.register(r'educations', views.EducationListCreateView, basename='educations')
-router.register(r'education', views.EducationRetrieveUpdateView, basename='education')
-router.register(r'universities', views.UniversityListView, basename='universities')
-router.register(r'university', views.UniversityRetrieveView, basename='university')
-router.register(r'specialities', views.SpecialityListView, basename='specialities')
-router.register(r'speciality', views.SpecialityRetrieveView, basename='speciality')
-
 urlpatterns = [
-    path("", include(router.urls)),
+    path("educations/", views.EducationListCreateView.as_view(), name="educations-list-create"),
+    path("education/<int:pk>/", views.EducationRetrieveUpdateView.as_view(), name="education-detail"),
+    path("universities/", views.UniversityListView.as_view(), name="universities-list"),
+    path("university/<int:pk>/", views.UniversityRetrieveView.as_view(), name="university-detail"),
+    path("specialities/", views.SpecialityListView.as_view(), name="specialities-list"),
+    path("speciality/<int:pk>/", views.SpecialityRetrieveView.as_view(), name="speciality-detail"),
 ]

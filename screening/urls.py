@@ -1,24 +1,20 @@
-from django.urls import path,include
+from django.urls import path
 from screening.views import *
 from screening import views
-from rest_framework import routers
 
 app_name = 'screening'
 
-router = routers.DefaultRouter()
-router.register(r"categories", views.CategoryQuestionaryListView, basename="questionaries-categories")
-router.register(r"category", views.CategoryQuestionaryRetrieveView, basename="questionaries-category")
-router.register(r"questionaries", views.QuestionaryListView, basename="questionaries-questionaries")
-router.register(r"questionary", views.QuestionaryRetrieveView, basename="questionaries-questionary")
-router.register(r"dimensions", views.QuestionaryDimensionListView, basename="questionaries-dimensions")
-router.register(r"dimension", views.QuestionaryDimensionRetrieveView, basename="questionaries-dimension")
-router.register(r"questions", views.QuestionaryQuestionListView, basename="questionaries-questions")
-router.register(r"question", views.QuestionaryQuestionRetrieveView, basename="questionaries-question")
-router.register(r"answers", views.QuestionaryAnswerListCreateView, basename="questionaries-answers")
-router.register(r"answer", views.QuestionaryAnswerRetrieveView, basename="questionaries-answer")
-router.register(r"responses", views.QuestionaryResponseListCreateView, basename="questionaries-responses")
-router.register(r"response", views.QuestionaryResponseRetrieveUpdateView, basename="questionaries-response")
-
 urlpatterns = [
-    path("questionaries/", include(router.urls)),
+    path("questionaries/categories/", views.CategoryQuestionaryListView.as_view(), name="questionaries-categories"),
+    path("questionaries/category/<int:pk>/", views.CategoryQuestionaryRetrieveView.as_view(), name="questionaries-category"),
+    path("questionaries/questionaries/", views.QuestionaryListView.as_view(), name="questionaries-questionaries"),
+    path("questionaries/questionary/<int:pk>/", views.QuestionaryRetrieveView.as_view(), name="questionaries-questionary"),
+    path("questionaries/dimensions/", views.QuestionaryDimensionListView.as_view(), name="questionaries-dimensions"),
+    path("questionaries/dimension/<int:pk>/", views.QuestionaryDimensionRetrieveView.as_view(), name="questionaries-dimension"),
+    path("questionaries/questions/", views.QuestionaryQuestionListView.as_view(), name="questionaries-questions"),
+    path("questionaries/question/<int:pk>/", views.QuestionaryQuestionRetrieveView.as_view(), name="questionaries-question"),
+    path("questionaries/answers/", views.QuestionaryAnswerListCreateView.as_view(), name="questionaries-answers"),
+    path("questionaries/answer/<int:pk>/", views.QuestionaryAnswerRetrieveView.as_view(), name="questionaries-answer"),
+    path("questionaries/responses/", views.QuestionaryResponseListCreateView.as_view(), name="questionaries-responses"),
+    path("questionaries/response/<uuid:pk>/", views.QuestionaryResponseRetrieveUpdateView.as_view(), name="questionaries-response"),
 ]
