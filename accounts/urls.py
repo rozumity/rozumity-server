@@ -1,48 +1,20 @@
-from django.urls import path
-from accounts.views import *
+from django.urls import path, include
+from rest_framework import routers
+from accounts import views
 
 
 app_name = 'accounts'
 
+router = routers.DefaultRouter()
+router.register(r'users', views.UserListView, basename='users-list')
+router.register(r'user', views.UserRetrieveView, basename='user-detail')
+router.register(r'profile/client', views.ClientProfileRetrieveUpdateView, basename='client-profile')
+router.register(r'profile/experts', views.ExpertProfileRetrieveUpdateView, basename='expert-profile')
+router.register(r'subscriptions', views.SubscriptionPlanListView, basename='subscriptions')
+router.register(r'subscription', views.SubscriptionPlanRetrieveView, basename='subscription')
+router.register(r'contracts', views.TherapyContractCreateView, basename='contracts')
+router.register(r'contract', views.TherapyContractRetrieveUpdateView, basename='contract')
+
 urlpatterns = [
-    path(
-        "users/",
-        UserListView.as_view(),
-        name='users'
-    ),
-    path(
-        "user/<uuid:pk>/",
-        UserRetrieveView.as_view(),
-        name='user'
-    ),
-    path(
-        "profile/client/<str:pk>/",
-        ClientProfileRetrieveUpdateView.as_view(),
-        name='client-profile'
-    ),
-    path(
-        "profile/expert/<str:pk>/",
-        ExpertProfileRetrieveUpdateView.as_view(),
-        name='expert-profile'
-    ),
-    path(
-        "subscriptions/",
-        SubscriptionPlanListView.as_view(),
-        name='subscriptions'
-    ),
-    path(
-        "subscription/<int:pk>/",
-        SubscriptionPlanRetrieveView.as_view(),
-        name='subscription'
-    ),
-    path(
-        "contracts/",
-        TherapyContractCreateView.as_view(),
-        name='contracts'
-    ),
-    path(
-        "contract/<int:pk>/",
-        TherapyContractRetrieveUpdateView.as_view(),
-        name='contract'
-    )
+    path("", include(router.urls)),
 ]
