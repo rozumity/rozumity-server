@@ -1,11 +1,11 @@
 from adrf.generics import (
     ListAPIView, RetrieveUpdateAPIView,
-    RetrieveAPIView, CreateAPIView, UpdateAPIView
+    RetrieveAPIView, CreateAPIView
 )
 from rozumity.throttling import UserRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    CacheRUMixin, CacheUpdateMixin, CacheListMixin, 
+    CacheRUMixin, CacheListMixin, 
     CacheRetrieveMixin, CacheCreateMixin
 )
 
