@@ -4,6 +4,8 @@ from asgiref.sync import sync_to_async
 from rest_framework import status
 from rest_framework.response import Response
 
+from rozumity.mixins.filtering_mixins import OwnedList
+
 
 class CacheMixinBase:
     async def _generate_cache_key(self):
@@ -11,7 +13,7 @@ class CacheMixinBase:
         return self.cache_key
 
     async def _generate_request_cache_key(self, request):
-        self.cache_key = md5(self.__class__.__name__.lower().encode()).hexdigest()
+        self.cache_key = md5(request.get_full_path().encode()).hexdigest()
         return self.cache_key
 
 
@@ -19,6 +21,9 @@ class ListMixin(CacheMixinBase):
     async def get(self, request, *args, **kwargs):
         cache_key_page = await self._generate_request_cache_key(request)
         cache_key = await self._generate_cache_key()
+        if isinstance(self, OwnedList):
+            cache_key_page = f'{cache_key_page}:{request.user.id}'
+
         if not await cache.ahas_key(cache_key_page):
             queryset = self.filter_queryset(self.get_queryset())
             page = await self.apaginate_queryset(queryset)
