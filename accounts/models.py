@@ -17,7 +17,9 @@ from accounts.managers import EmailUserManager
 
 # TODO: db_index
 class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, unique=True, editable=False, db_index=True
+    )
     email = models.EmailField(_("email address"), unique=True, max_length=64)
     is_client = models.BooleanField(default=False)
     is_expert = models.BooleanField(default=False)
@@ -48,14 +50,10 @@ class AbstractProfile(models.Model):
         HIDE = 5, _("Prefer not to say")
 
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, help_text=_('User Email'), 
-        primary_key=True, to_field='email', editable=False
+        User, on_delete=models.CASCADE, primary_key=True, editable=False
     )
     first_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
-    # PostgreSQL specific django_postgres_extensions
-    # Allows to select multiple genders at once, for example, intersex female
-    #gender = ArrayField(models.SmallIntegerField(choices=GENDER_CHOICES, default=5), default=(5,), max_length=2, size=2)
     gender = models.SmallIntegerField(choices=GenderChoices.choices, default=GenderChoices.HIDE)
     country = CountryField(blank=True, blank_label="(Select country)")
     date_birth = models.DateField(
@@ -63,14 +61,14 @@ class AbstractProfile(models.Model):
     )
 
     class Meta:
-        abstract=True
+        abstract = True
 
     def __str__(self):
         return str(self.user.email)
 
     @property
     def id(self):
-        return self.user_id
+        return self.pk
 
     @property
     async def user_email(self):
@@ -136,7 +134,7 @@ class ExpertProfile(AbstractProfile):
     async def client_email(self):
         contract = await rel(self, "contract")
         contract = await contract.aget()
-        return contract.client_id
+        return getattr(await rel(contract, "client"), "email")
 
 
 class StaffProfile(AbstractProfile):
@@ -258,13 +256,13 @@ class TherapyContract(models.Model):
     @property
     async def is_active_client(self):
         if await self.is_paid_client:
-            return await self.date_end_client < timezone.now()
+            return await self.date_end_client > timezone.now()
         return False
 
     @property
     async def is_active_expert(self):
         if await self.is_paid_expert:
-            return await self.date_end_expert < timezone.now()
+            return await self.date_end_expert > timezone.now()
         return False
 
     @property
@@ -279,7 +277,7 @@ class TherapyContract(models.Model):
     @property
     async def is_active_full(self):
         if await self.is_paid_full:
-            return await self.date_end < timezone.now()
+            return await self.date_end > timezone.now()
         return False
 
     @property

@@ -1,5 +1,3 @@
-# python manage.py test
-# python ../manage.py test accounts
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
@@ -27,7 +25,7 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
 
     async def test_create_superuser_profile(self):
         User = await sync_to_async(get_user_model)()
-        admin_user =  await sync_to_async(User.objects.create_superuser)(
+        admin_user = await sync_to_async(User.objects.create_superuser)(
             email="super@user.com", password="foo"
         )
         self.assertEqual(admin_user.email, "super@user.com")
@@ -43,12 +41,12 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
         with self.assertRaises(ObjectDoesNotExist):
             await StaffProfile.objects.aget(user=profile.user)
         with self.assertRaises(ObjectDoesNotExist):
-            await User.objects.aget(email=await profile.user_email)
+            await User.objects.aget(id=profile.user.id)
 
     async def test_create_profiles(self):
-        User, emails = await self.get_user_model(), self.get_emails()
-        self.assertEqual(await self.profile_client.user_email, emails["client"])
-        self.assertEqual(await self.profile_expert.user_email, emails["expert"])
+        User = await self.get_user_model()
+        self.assertEqual(self.profile_client.id, self.user_client.id)
+        self.assertEqual(self.profile_expert.id, self.user_expert.id)
         speciality = await Speciality.objects.acreate(
             code=222, title="Medicine", is_medical=True
         )
@@ -69,14 +67,13 @@ class AuthenticationTests(ProfileCreationMixin, TestCase):
         with self.assertRaises(ObjectDoesNotExist):
             await ExpertProfile.objects.aget(user=self.profile_expert.user)
         with self.assertRaises(ObjectDoesNotExist):
-            await User.objects.aget(email=self.profile_expert.user.email)
+            await User.objects.aget(id=self.profile_expert.user.id)
         with self.assertRaises(ObjectDoesNotExist):
             await ClientProfile.objects.aget(user=self.profile_client.user)
         with self.assertRaises(ObjectDoesNotExist):
-            await User.objects.aget(email=self.profile_client.user.email)
+            await User.objects.aget(id=self.profile_client.user.id)
 
 
-# TODO: test async model props
 class ContractTests(ProfileCreationMixin, TestCase):
     fixtures = ["subscription_plans"]
 
@@ -92,10 +89,7 @@ class ContractTests(ProfileCreationMixin, TestCase):
             expert_plan_days=14
         )
         self.assertIsNotNone(contract)
-        profile_test = contract.client
-        self.assertEqual(await profile_test.user_email, await self.profile_client.user_email)
-        profile_test = contract.expert
-        self.assertEqual(await profile_test.user_email, await self.profile_expert.user_email)
-        profile_test = contract.client_plan
-        self.assertEqual(contract.expert_plan, subscription_expert)
-        self.assertEqual(profile_test, subscription_client)
+        self.assertEqual(await rel(contract, 'client_id'), self.profile_client.pk)
+        self.assertEqual(await rel(contract, 'expert_id'), self.profile_expert.pk)
+        self.assertEqual(await rel(contract, 'expert_plan_id'), subscription_expert.pk)
+        self.assertEqual(await rel(contract, 'client_plan_id'), subscription_client.pk)

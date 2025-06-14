@@ -16,7 +16,7 @@ class IsExpert(permissions.BasePermission):
 class IsContractSigner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
-            return request.user.email in (obj.client_id, obj.expert_id)
+            return request.user.email in (obj.client.pk, obj.expert_id)
 
 
 class IsProfileOwnerWriteAuthRead(permissions.BasePermission):

@@ -69,7 +69,7 @@ class ExpertProfileSerializer(ProfileSerializerBase):
 
 class StaffProfileSerializer(ProfileSerializerBase):
     class Meta:
-        model = ExpertProfile
+        model = StaffProfile
         fields = "__all__"
         read_only_fields = ('date_birth', "user")
 

@@ -54,6 +54,14 @@ class ClientProfileRetrieveUpdateView(
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsProfileOwnerWriteAuthRead,)
 
+    async def get_object(self):
+        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
+        for permission in self.get_permissions():
+            if hasattr(permission, "has_object_permission"):
+                if not await permission.has_object_permission(self.request, self, obj):
+                    self.permission_denied(self.request)
+        return obj
+
 
 class ExpertProfileRetrieveUpdateView(
     ReadUpdateMixin, RetrieveUpdateAPIView
@@ -70,6 +78,14 @@ class ExpertProfileRetrieveUpdateView(
         if self.request.method.lower() == 'get':
             return ExpertProfileReadOnlySerializer
         return ExpertProfileSerializer
+
+    async def get_object(self):
+        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
+        for permission in self.get_permissions():
+            if hasattr(permission, "has_object_permission"):
+                if not await permission.has_object_permission(self.request, self, obj):
+                    self.permission_denied(self.request)
+        return obj
 
 
 class SubscriptionPlanListView(
@@ -125,3 +141,11 @@ class TherapyContractRetrieveUpdateView(
     ).all()
     serializer_class = TherapyContractSerializer
     permission_classes = (IsContractSigner,)
+
+    async def get_object(self):
+        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
+        for permission in self.get_permissions():
+            if hasattr(permission, "has_object_permission"):
+                if not await permission.has_object_permission(self.request, self, obj):
+                    self.permission_denied(self.request)
+        return obj
