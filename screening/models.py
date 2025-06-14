@@ -1,18 +1,18 @@
 import uuid
-from async_property import async_cached_property
 
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 from django.db import models
-
-from rozumity.utils import rel
 
 
 class TagScreening(models.Model):
-    title = models.CharField(max_length=255, default="")
+    title = models.CharField(max_length=255, default="", unique=True, db_index=True)
     description = models.TextField(default="")
     color = models.CharField(max_length=7, default="#FFFFFF")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Tag')
         verbose_name_plural = _('Tags')
 
@@ -20,11 +20,13 @@ class TagScreening(models.Model):
         return self.title
 
 
-class CategoryQuestionary(models.Model):
-    title = models.CharField(max_length=255, default="")
+class QuestionaryCategory(models.Model):
+    title = models.CharField(max_length=255, default="", unique=True, db_index=True)
     description = models.TextField(default="")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Category Questionary')
         verbose_name_plural = _('Q - Categories')
 
@@ -32,29 +34,12 @@ class CategoryQuestionary(models.Model):
         return self.title
 
 
-class Questionary(models.Model):
-    title = models.CharField(max_length=255, unique=True, db_index=True, default="")
-    description = models.TextField(default="")
-    categories = models.ManyToManyField(
-        CategoryQuestionary, blank=True
-    )
-    tags = models.ManyToManyField(
-        TagScreening, blank=True
-    )
-
-    class Meta:
-        verbose_name = _('Questionary')
-        verbose_name_plural = _('Questionaries')
-
-    def __str__(self):
-        return self.title
-
-
 class QuestionaryDimension(models.Model):
-    title = models.CharField(max_length=255, default="")
+    title = models.CharField(max_length=255, default="", unique=True, db_index=True)
     description = models.TextField(default="")
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Dimension')
         verbose_name_plural = _('Q - Dimensions')
 
@@ -62,90 +47,145 @@ class QuestionaryDimension(models.Model):
         return self.title
 
 
-class QuestionaryScore(models.Model):
-    title = models.CharField(max_length=255, default="")
+class QuestionaryDimensionValue(models.Model):
+    value = models.FloatField(default=0)
     dimension = models.ForeignKey(
-        QuestionaryDimension, on_delete=models.CASCADE,
-        null=True, related_name="results"
+        QuestionaryDimension, on_delete=models.CASCADE, 
+        related_name="dimension_values", db_index=True
+    )
+
+    class Meta:
+        ordering = ('value',)
+        verbose_name = _('Value')
+        verbose_name_plural = _('Q - Values')
+        constraints = [
+            models.UniqueConstraint(fields=['dimension', 'value'], name='unique_dimension_value')
+        ]
+        indexes = [
+            models.Index(fields=['dimension']),
+        ]
+
+    def __str__(self):
+        return f'{self.dimension.title} +{self.value}'
+
+
+class QuestionaryScore(models.Model):
+    title = models.CharField(max_length=255, default="", db_index=True)
+    description = models.TextField(default="")
+    questionary = models.ForeignKey(
+        'Questionary', on_delete=models.CASCADE, related_name="scores",
+        null=True, default=None, db_index=True
+    )
+    dimension = models.ForeignKey(
+        QuestionaryDimension, on_delete=models.CASCADE, related_name="scores",
+        null=True, default=None, db_index=True
     )
     min_score = models.FloatField(default=0)
     max_score = models.FloatField(default=100)
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Score')
         verbose_name_plural = _('Q - Scores')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['questionary', 'dimension', 'title'], 
+                name='unique_score_per_questionary_dimension'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['questionary', 'dimension']),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        if self.min_score > self.max_score:
+            raise ValidationError("min_score cannot be greater than max_score")
+
+
+class QuestionaryScoreExtra(models.Model):
+    title = models.CharField(max_length=255, default="", db_index=True)
+    description = models.TextField(default="")
+    questionary = models.ForeignKey(
+        'Questionary', on_delete=models.CASCADE,
+        related_name="score_extras", db_index=True
+    )
+    scores = models.ManyToManyField(QuestionaryScore, blank=True)
+
+    class Meta:
+        ordering = ('title',)
+        verbose_name = _('Score Extra')
+        verbose_name_plural = _('Q - Extras')
+        indexes = [
+            models.Index(fields=['questionary']),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class Questionary(models.Model):
+    title = models.CharField(max_length=255, unique=True, default="", db_index=True)
+    description = models.TextField(default="")
+    categories = models.ManyToManyField(QuestionaryCategory, blank=True)
+    tags = models.ManyToManyField(TagScreening, blank=True)
+
+    class Meta:
+        ordering = ('title',)
+        verbose_name = _('Questionary')
+        verbose_name_plural = _('Q - Questionaries')
 
     def __str__(self):
         return self.title
 
 
 class QuestionaryQuestion(models.Model):
+    title = models.CharField(max_length=255, default="", db_index=True)
     questionary = models.ForeignKey(
         Questionary, on_delete=models.CASCADE, 
-        related_name="questions", null=True, db_index=True
+        related_name="questions", null=True, default=None, db_index=True
     )
-    title = models.CharField(max_length=255, default="")
     text = models.TextField(default="")
     weight = models.FloatField(default=1.0)
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Question')
         verbose_name_plural = _('Q - Questions')
+        constraints = [
+            models.UniqueConstraint(fields=['questionary', 'title'], name='unique_question_per_questionary')
+        ]
+        indexes = [
+            models.Index(fields=['questionary']),
+        ]
 
     def __str__(self):
         return self.title
 
 
-class QuestionaryAnswerValue(models.Model):
-    value = models.FloatField(default=0)
-    dimension = models.ForeignKey(
-        QuestionaryDimension, on_delete=models.CASCADE, 
-        related_name="answers", db_index=True, null=True
-    )
-
-    class Meta:
-        verbose_name = _('Value')
-        verbose_name_plural = _('Q - Values')
-        indexes = [
-            models.Index(fields=["dimension", "value"]),
-        ]
-        unique_together = ('dimension', 'value')
-
-    def __str__(self):
-        return f'{self.dimension.title} +{self.value}'
-
-
 class QuestionaryAnswer(models.Model):
+    title = models.CharField(max_length=255, default="", db_index=True)
     question = models.ForeignKey(
         QuestionaryQuestion, on_delete=models.CASCADE, 
         related_name="answers", db_index=True
     )
-    title = models.CharField(max_length=255, default="")
-    values = models.ManyToManyField(QuestionaryAnswerValue)
+    values = models.ManyToManyField(QuestionaryDimensionValue, blank=True)
 
     class Meta:
+        ordering = ('title',)
         verbose_name = _('Answer')
         verbose_name_plural = _('Q - Answers')
+        constraints = [
+            models.UniqueConstraint(fields=['question', 'title'], name='unique_answer_per_question')
+        ]
+        indexes = [
+            models.Index(fields=['question']),
+        ]
 
     def __str__(self):
         return self.title
-
-
-class QuestionaryResult(models.Model):
-    title = models.CharField(max_length=128, default="")
-    description = models.TextField(default="")
-    questionary = models.ForeignKey(
-        Questionary, on_delete=models.CASCADE, db_index=True, null=True,
-        related_name="results"
-    )
-    scores = models.ManyToManyField(QuestionaryScore, related_name="results")
-
-    class Meta:
-        verbose_name = _('Result')
-        verbose_name_plural = _('Q - Results')
-
-    def __str__(self):
-        return f"{self.title} - {self.questionary.title}"
 
 
 class QuestionaryResponse(models.Model):
@@ -155,74 +195,65 @@ class QuestionaryResponse(models.Model):
     )
     client = models.ForeignKey(
         'accounts.ClientProfile', on_delete=models.PROTECT,
-        null=True, related_name="questionary_results",
-        db_index=True
+        related_name="responses", null=True, db_index=True
     )
     questionary = models.ForeignKey(
-        Questionary, on_delete=models.CASCADE, null=True,
-        related_name="responses"
+        Questionary, on_delete=models.CASCADE,
+        related_name="responses", null=True, db_index=True
     )
-    result = models.ForeignKey(
-        QuestionaryResult, on_delete=models.CASCADE, 
-        null=True, blank=True, related_name="responses"
-    )
-    answers = models.ManyToManyField(
-        QuestionaryAnswer, blank=True,
-        related_name='responses'
-    )
+    answers = models.ManyToManyField(QuestionaryAnswer, blank=True)
     is_public = models.BooleanField(default=False)
     is_public_expert = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ('id',)
         verbose_name = _('Response')
         verbose_name_plural = _('Q - Responses')
+        indexes = [
+            models.Index(fields=['client', 'questionary']),
+        ]
 
     def __str__(self):
-        title = "draft"
-        if self.result:
-            title = self.result.questionary.title
-        return f"{self.client_id} - {title}"
-    
+        return f"{self.client.pk} - {self.questionary.title}"
+
     @property
     async def is_filled(self):
-        questionary = await rel(self, 'questionary')
-        questions = await rel(questionary, 'questions')
-        answers = await rel(self, 'answers')
-        if await questions.all().acount() == await answers.all().acount():
-            return {
-                question.id async for question in questions.all()
-            } == {
-                answer.question_id async for answer in answers.all()
-            }
-        return False
-        
-
-    async def get_score_by_dimension(self, dimension_id):
-        score = 0
-        async for answer in await self.answers:
-            async for value in answer.values:
-                if value.dimension_id == dimension_id:
-                    score += value.value
-        return score
+        question_ids = set(
+            await self.questionary.questions.all().values_list("id", flat=True)
+        )
+        answered_question_ids = set(
+            await self.answers.all().values_list("question_id", flat=True)
+        )
+        return question_ids.issubset(answered_question_ids)
 
     @property
     async def total_score(self):
         score = {}
-        async for answer in self.answers.all():
-            weight = getattr(await rel(answer, 'question'), 'weight')
-            async for value in answer.values.all():
+        answers = await self.answers.all().aprefetch_related("values", "question")
+        for answer in answers:
+            weight = answer.question.weight
+            values = await answer.values.all()
+            for value in values:
                 dim_id = value.dimension_id
-                if dim_id not in score.keys():
-                    score[dim_id] = 0
-                score[dim_id] += value.value * weight
+                score[dim_id] = score.get(dim_id, 0) + value.value * weight
         return score
 
-# Survey
+    async def get_score_by_dimension(self, dimension_id):
+        total = 0
+        answers = await self.answers.all().aprefetch_related("values")
+        for answer in answers:
+            values = await answer.values.filter(dimension_id=dimension_id)
+            for value in values:
+                total += value.value
+        return total
 
-class CategorySurvey(models.Model):
-    title = models.CharField(max_length=255, default="")
+
+class SurveyCategory(models.Model):
+    title = models.CharField(max_length=255, default="", unique=True, db_index=True)
     description = models.TextField(default="")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = _('Category Survey')
@@ -233,10 +264,10 @@ class CategorySurvey(models.Model):
 
 
 class Survey(models.Model):
-    title = models.CharField(max_length=255, unique=True, db_index=True, default="")
+    title = models.CharField(max_length=255, unique=True, default="", db_index=True)
     description = models.TextField(default="")
     categories = models.ManyToManyField(
-        CategorySurvey, blank=True
+        SurveyCategory, blank=True
     )
     tags = models.ManyToManyField(
         TagScreening, blank=True
@@ -244,20 +275,26 @@ class Survey(models.Model):
 
     class Meta:
         verbose_name = _('Survey')
-        verbose_name_plural = _('Surveys')
+        verbose_name_plural = _('S - Surveys')
 
     def __str__(self):
         return self.title
 
 
 class SurveyTheme(models.Model):
-    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="themes")
-    title = models.CharField(max_length=255, default="")
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="themes", db_index=True)
+    title = models.CharField(max_length=255, default="", db_index=True)
     description = models.TextField(default="")
 
     class Meta:
         verbose_name = _('Theme')
         verbose_name_plural = _('S - Themes')
+        constraints = [
+            models.UniqueConstraint(fields=['survey', 'title'], name='unique_theme_per_survey')
+        ]
+        indexes = [
+            models.Index(fields=['survey']),
+        ]
 
     def __str__(self):
         return self.title
@@ -266,21 +303,20 @@ class SurveyTheme(models.Model):
 class SurveyResult(models.Model):
     client = models.ForeignKey(
         'accounts.ClientProfile', on_delete=models.PROTECT,
-        null=True, blank=True, related_name="survey_entries",
-        db_index=True
+        related_name="survey_entries", null=True, db_index=True
     )
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="results", db_index=True)
-    completed_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    completed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = _('Result')
         verbose_name_plural = _('S - Results')
         indexes = [
-            models.Index(fields=["client", "survey",]),
+            models.Index(fields=['client', 'survey']),
         ]
 
     def __str__(self):
-        return f"{self.client.client_id}, {self.survey.survey_id}"
+        return f"{self.client.pk}, {self.survey.title}"
 
 
 class SurveyEntry(models.Model):
@@ -298,10 +334,15 @@ class SurveyEntry(models.Model):
     class Meta:
         verbose_name = _('Entry')
         verbose_name_plural = _('S - Entries')
-        unique_together = ("theme", "result")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['theme', 'result'], 
+                name='unique_entry_per_theme_result'
+            )
+        ]
         indexes = [
-            models.Index(fields=["theme", "result"]),
+            models.Index(fields=['theme', 'result']),
         ]
 
     def __str__(self):
-        return f"{self.theme.title}, {self.result.client_id}"
+        return f"{self.theme.title}, {self.result.client.pk}"

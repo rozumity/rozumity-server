@@ -2,91 +2,101 @@ from django.contrib import admin
 from screening.models import *
 from screening.forms import TagScreeningAdminForm
 
-# Register your models here.
 
 @admin.register(TagScreening)
 class TagScreeningAdmin(admin.ModelAdmin):
     form = TagScreeningAdminForm
-    list_filter = ()
-    list_display = ('title', 'color', 'id')
+    list_display = ('id', 'title', 'color')
     search_fields = ('title', 'color')
+    ordering = ('title',)
 
 
-@admin.register(Questionary)
-class QuestionaryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'id')
-    list_filter = ('categories', 'tags')
+@admin.register(QuestionaryCategory)
+class QuestionaryCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title')
     search_fields = ('title',)
-
-
-@admin.register(CategoryQuestionary)
-class CategoryQuestionaryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'id')
-    list_filter = ()
-    search_fields = ('title',)
+    ordering = ('title',)
 
 
 @admin.register(QuestionaryDimension)
 class QuestionaryDimensionAdmin(admin.ModelAdmin):
-    list_display = ('title', 'id')
-    list_filter = ()
+    list_display = ('id', 'title')
     search_fields = ('title',)
+    ordering = ('title',)
+
+
+@admin.register(QuestionaryDimensionValue)
+class QuestionaryDimensionValueAdmin(admin.ModelAdmin):
+    list_display = ('id', 'dimension', 'value')
+    list_filter = ('dimension',)
+    search_fields = ('dimension__title',)
+    ordering = ('dimension', 'value')
+
+
+@admin.register(Questionary)
+class QuestionaryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title')
+    list_filter = ('categories', 'tags')
+    search_fields = ('title',)
+    ordering = ('title',)
+    filter_horizontal = ('categories', 'tags')
 
 
 @admin.register(QuestionaryScore)
 class QuestionaryScoreAdmin(admin.ModelAdmin):
-    list_display = ('title', 'dimension', 'min_score', 'max_score')
-    list_filter = ('dimension',)
-    search_fields = ('title', 'dimension__title')
+    list_display = ('id', 'title', 'questionary', 'dimension', 'min_score', 'max_score')
+    list_filter = ('questionary', 'dimension')
+    search_fields = ('title', 'questionary__title', 'dimension__title')
+    ordering = ('questionary', 'dimension', 'title')
+
+
+@admin.register(QuestionaryScoreExtra)
+class QuestionaryScoreExtraAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'questionary')
+    list_filter = ('questionary',)
+    search_fields = ('title', 'questionary__title')
+    filter_horizontal = ('scores',)
+    ordering = ('questionary', 'title')
 
 
 @admin.register(QuestionaryQuestion)
 class QuestionaryQuestionAdmin(admin.ModelAdmin):
-    list_display = ('title', 'questionary', 'weight')
+    list_display = ('id', 'title', 'questionary', 'weight')
     list_filter = ('questionary',)
     search_fields = ('title', 'questionary__title')
-
-
-@admin.register(QuestionaryAnswerValue)
-class QuestionaryAnswerValueAdmin(admin.ModelAdmin):
-    list_display = ('dimension', 'value')
-    list_filter = ('dimension',)
-    search_fields = ('dimension__title',)
+    ordering = ('questionary', 'title')
 
 
 @admin.register(QuestionaryAnswer)
 class QuestionaryAnswerAdmin(admin.ModelAdmin):
-    list_display = ('title', 'question')
+    list_display = ('id', 'title', 'question')
     list_filter = ('question',)
     search_fields = ('title', 'question__title')
+    filter_horizontal = ('values',)
+    ordering = ('question', 'title')
 
 
 @admin.register(QuestionaryResponse)
 class QuestionaryResponseAdmin(admin.ModelAdmin):
-    list_display = ('client', 'questionary', 'is_public', 'is_public_expert', 'created_at')
+    list_display = ('id', 'client', 'questionary', 'is_public', 'is_public_expert', 'created_at')
     list_filter = ('is_public', 'is_public_expert', 'questionary', 'created_at')
-    search_fields = ('id', 'questionary__title', 'result__title')
+    search_fields = ('id', 'client__user__email', 'questionary__title')
+    ordering = ('-created_at',)
 
 
-@admin.register(QuestionaryResult)
-class QuestionaryResultAdmin(admin.ModelAdmin):
-    list_display = ('title', 'questionary', 'id')
-    list_filter = ('questionary',)
-    search_fields = ('title', 'questionary__title')
+@admin.register(SurveyCategory)
+class SurveyCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title')
+    search_fields = ('title',)
+    ordering = ('title',)
 
 
 @admin.register(Survey)
 class SurveyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title',)
-    list_filter = ()
+    list_display = ('id', 'title')
     search_fields = ('title',)
-
-
-@admin.register(CategorySurvey)
-class CategorySurveyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'id')
-    list_filter = ()
-    search_fields = ('title',)
+    filter_horizontal = ('categories', 'tags')
+    ordering = ('title',)
 
 
 @admin.register(SurveyTheme)
@@ -94,17 +104,20 @@ class SurveyThemeAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'survey')
     list_filter = ('survey',)
     search_fields = ('title', 'survey__title')
+    ordering = ('survey', 'title')
 
 
 @admin.register(SurveyResult)
 class SurveyResultAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'survey', 'completed_at')
     list_filter = ('survey', 'completed_at')
-    search_fields = ('client__client_id', 'survey__title')
+    search_fields = ('client__user__email', 'survey__title')
+    ordering = ('-completed_at',)
 
 
 @admin.register(SurveyEntry)
 class SurveyEntryAdmin(admin.ModelAdmin):
     list_display = ('id', 'theme', 'result', 'answer', 'created_at')
     list_filter = ('theme', 'result', 'created_at')
-    search_fields = ('theme__title', 'result__client__client_id', 'answer')
+    search_fields = ('theme__title', 'result__client__user__email', 'answer')
+    ordering = ('-created_at',)
