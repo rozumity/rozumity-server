@@ -86,26 +86,16 @@ class QuestionaryResponseSerializer(ModelSerializer):
         fields = "__all__"
 
     async def aupdate(self, instance, validated_data):
-        if validated_data.get('answers', []):
-            await instance.answers.aadd(set(
-                [a.pk if hasattr(a, 'pk') else a for a in validated_data['answers']]
-            ))
-        instance = await super().aupdate(self, instance, validated_data)
-        if await instance.is_filled:
-            total_score = await instance.total_score  # {dimension_id: score}
-            candidate_qs = QuestionaryScore.objects.filter(
-                questionary=instance.questionary
-            )
-            for dim_id, score in total_score.items():
-                candidate_qs = candidate_qs.filter(
-                    dimension_id=dim_id, min_score__lte=score, max_score__gte=score
-                )
-            candidate_qs = candidate_qs.distinct()
-            result = await candidate_qs.afirst()
-            if result:
-                instance.result = result
-                await instance.asave()
-        return instance
+        if len(validated_data.get('answers', [])):
+            try:
+                await instance.answers.aadd(set([
+                    a["id"] if "id" in a.keys() else int(a)
+                    for a in validated_data['answers']
+                ]))
+            except Exception:
+                pass
+        # TODO: Test when data is the same
+        return await super().aupdate(self, instance, validated_data)
 
 
 class QuestionaryResponseReadOnlySerializer(ReadOnlySerializerMixin, QuestionaryResponseSerializer):
