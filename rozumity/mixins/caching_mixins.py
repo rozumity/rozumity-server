@@ -65,6 +65,7 @@ class ListMixin(CacheMixinBase):
             paginator.request = request
             paginator_name = paginator.__class__.__name__
             if hasattr(paginator, "get_apaginated_response"):
+                # TODO: offset limit and others formatting not empty list
                 if "LimitOffset" in paginator_name:
                     paginator.count = len(data)
                     paginator.offset = paginator.get_offset(request)
