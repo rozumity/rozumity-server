@@ -3,6 +3,7 @@ import uuid
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db import models
+from asgiref.sync import sync_to_async
 
 
 class TagScreening(models.Model):
@@ -202,6 +203,10 @@ class QuestionaryResponse(models.Model):
         related_name="responses", null=True, db_index=True
     )
     answers = models.ManyToManyField(QuestionaryAnswer, blank=True)
+    scores = models.ManyToManyField(QuestionaryScore, blank=True)
+    scores_extra = models.ManyToManyField(QuestionaryScoreExtra, blank=True)
+    is_filled = models.BooleanField(default=False)
+    is_checked = models.BooleanField(default=False)
     is_public = models.BooleanField(default=False)
     is_public_expert = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -212,7 +217,7 @@ class QuestionaryResponse(models.Model):
         verbose_name = _('Response')
         verbose_name_plural = _('Q - Responses')
         indexes = [
-            models.Index(fields=['client', 'questionary']),
+            models.Index(fields=['client', 'questionary'])
         ]
 
     def __str__(self):
@@ -220,35 +225,27 @@ class QuestionaryResponse(models.Model):
 
     @property
     async def is_filled(self):
-        question_ids = set(
-            await self.questionary.questions.all().values_list("id", flat=True)
-        )
-        answered_question_ids = set(
-            await self.answers.all().values_list("question_id", flat=True)
-        )
-        return question_ids.issubset(answered_question_ids)
+        is_filled = self.__dict__['is_filled']
+        if is_filled:
+            return True
+        questions_q = self.questionary.questions.all()
+        answers_q = self.answers.all()
+        if await answers_q.acount() >= await questions_q.acount():
+            is_filled = set(
+                await questions_q.values_list("id", flat=True)
+            ).issubset(set(
+                await answers_q.values_list("question_id", flat=True)
+            ))
+            await sync_to_async(super().__setattr__)('is_filled', is_filled)
+        return is_filled
 
+    # TODO: generate json from the actual scores, and by dimension id
     @property
-    async def total_score(self):
-        score = {}
-        answers = await self.answers.all().aprefetch_related("values", "question")
-        for answer in answers:
-            weight = answer.question.weight
-            values = await answer.values.all()
-            for value in values:
-                dim_id = value.dimension_id
-                score[dim_id] = score.get(dim_id, 0) + value.value * weight
-        return score
-
-    async def get_score_by_dimension(self, dimension_id):
-        total = 0
-        answers = await self.answers.all().aprefetch_related("values")
-        for answer in answers:
-            values = await answer.values.filter(dimension_id=dimension_id)
-            for value in values:
-                total += value.value
-        return total
-
+    async def scores_map(self):
+        scores = self.__dict__['scores']
+        is_filled = self.__dict__['is_filled']
+        return scores
+    
 
 class SurveyCategory(models.Model):
     title = models.CharField(max_length=255, default="", unique=True, db_index=True)
