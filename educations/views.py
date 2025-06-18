@@ -5,10 +5,11 @@ from adrf.generics import (
 from rozumity.throttling import UserRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    ReadUpdateMixin, ListMixin, 
-    RetrieveMixin, ListCreateMixin
+    ReadUpdateMixin, ListModelMixin, 
+    RetrieveMixin, ListCreateMixin,
+    ReadOnlyModelViewSet, CachedModelViewSet
 )
-from rozumity.mixins.filtering_mixins import OwnedList
+from rozumity.mixins.filtering_mixins import Owned
 
 from accounts.permissions import IsExpert
 from educations.permissions import IsEducationOwner
@@ -17,23 +18,9 @@ from educations.models import *
 from educations.serializers import *
 
 
-class UniversityListView(
-    ListMixin, ListAPIView
-):
+class UniversityReadOnlyViewSet(ReadOnlyModelViewSet):
     """
     API view to retrieve a list of all universities.
-    Only accessible to users with expert permissions.
-    """
-    queryset = University.objects.all()
-    serializer_class = UniversitySerializer
-    throttle_classes = (UserRateAsyncThrottle,)
-    permission_classes = (IsExpert,)
-
-
-class UniversityRetrieveView(
-    RetrieveMixin, RetrieveAPIView
-):
-    """
     API view to retrieve a single university by its ID.
     Only accessible to users with expert permissions.
     """
@@ -43,11 +30,10 @@ class UniversityRetrieveView(
     permission_classes = (IsExpert,)
 
 
-class SpecialityListView(
-    ListMixin, ListAPIView
-):
+class SpecialityReadOnlyViewSet(ReadOnlyModelViewSet):
     """
     API view to retrieve a list of all specialities.
+    API view to retrieve a single speciality by its ID.
     Only accessible to users with expert permissions.
     """
     queryset = Speciality.objects.all()
@@ -56,52 +42,16 @@ class SpecialityListView(
     permission_classes = (IsExpert,)
 
 
-class SpecialityRetrieveView(
-    RetrieveMixin, RetrieveAPIView
-):
+class EducationViewSet(Owned, CachedModelViewSet):
     """
-    API view to retrieve a list of all specialities.
-    Only accessible to users with expert permissions.
-    """
-    queryset = Speciality.objects.all()
-    serializer_class = SpecialitySerializer
-    throttle_classes = (UserRateAsyncThrottle,)
-    permission_classes = (IsExpert,)
-
-
-class EducationListCreateView(
-    OwnedList, ListCreateMixin, ListCreateAPIView
-):
-    """
-    API view to retrieve a list of all specialities.
+    API view to retrieve a list of all educations or create one.
+    API view to retrieve or update a single education by its ID.
     Only accessible to users with expert permissions.
     """
     queryset = Education.objects.select_related(
         "university", "speciality"
     ).all()
-    serializer_class = EducationSerializer
     throttle_classes = (UserRateAsyncThrottle,)
-    permission_classes = (IsExpert,)
-
-    def get_serializer_class(self):
-        if self.request.method.lower() == 'get':
-            return EducationReadOnlySerializer
-        return EducationSerializer
-
-
-class EducationRetrieveUpdateView(
-    ReadUpdateMixin, RetrieveUpdateAPIView
-):
-    """
-    API view to retrieve a list of all specialities.
-    Only accessible to users with expert permissions.
-    Uses ownership check.
-    """
-    queryset = Education.objects.select_related(
-        "university", "speciality"
-    ).all()
-    throttle_classes = (UserRateAsyncThrottle,)
-    permission_classes = (IsEducationOwner,)
 
     def get_serializer_class(self):
         if self.request.method.lower() == 'get':
