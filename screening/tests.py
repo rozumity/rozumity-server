@@ -118,26 +118,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    async def test_get_questionaries_by_category_tag(self):
-        response = getattr(await self.api(
-            "get", reverse("screening:questionaries-questionaries"), 
-            {"categories": [self.category.id], "tags":[self.tag.id]}, self.token_client
-        ), "json")()['results'][0]
-        self.assertIn({
-            'id': 1, 'title': 'category 1', 
-            'description': 'description 1', 'is_active': True
-        }, response["categories"])
-        self.assertIn({
-            'id': 1, 'title': 'tag 1', 'description': 'description 1', 
-            'color': '#FFFFFF', 'is_active': True
-        }, response["tags"])
-        response = await self.api(
-            "get", reverse("screening:questionaries-questionaries"),
-            {"categories": [99999], "tags":[99999]}, self.token_client
-        )
-        self.assertEqual(response.json()['results'], [])
-
-    async def test_user_questionary_response_flow(self):
+    async def test_get_questionary_by_pk(self):
         response = getattr(await self.api(
             "get", "/api/screening/questionaries/questionary/999999/", token=self.token_client
         ), "json")()
@@ -154,3 +135,31 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             'id': 1, 'title': 'tag 1', 'description': 'description 1', 
             'color': '#FFFFFF', 'is_active': True
         }, response["tags"])
+
+    async def test_user_questionary_response_flow(self):
+        response = await self.api(
+            "get", reverse("screening:questionaries-questionaries"),
+            {"categories": [99999], "tags":[99999]}, self.token_client
+        )
+        self.assertEqual(response.json()['results'], [])
+        response = getattr(await self.api(
+            "get", reverse("screening:questionaries-questionaries"), 
+            {"categories": [self.category.id], "tags":[self.tag.id]}, self.token_client
+        ), "json")()['results'][0]
+        self.assertIn({
+            'id': 1, 'title': 'category 1',
+            'description': 'description 1', 'is_active': True
+        }, response["categories"])
+        self.assertIn({
+            'id': 1, 'title': 'tag 1', 'description': 'description 1',
+            'color': '#FFFFFF', 'is_active': True
+        }, response["tags"])
+
+        answers = [question["answers"][0] for question in response["questions"]]
+
+        response = getattr(await self.api("post", reverse("screening:questionaries-responses"), {
+            "client": str(self.profile_client.id),
+            "questionary": response["id"],
+            "answers": [answer["id"] for answer in answers]
+        }, self.token_client), "json")()
+        #raise ValueError(response)
