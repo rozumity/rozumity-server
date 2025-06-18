@@ -1,6 +1,5 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
-from django.db.utils import IntegrityError
 
 from rozumity.utils import rel
 
@@ -14,10 +13,7 @@ async def create_user_profile(sender, instance, created, **kwargs):
         profile_model = StaffProfile
     elif instance.is_expert:
         profile_model = ExpertProfile
-    try:
-        await profile_model.objects.aget_or_create(user=instance)
-    except IntegrityError:
-        pass
+    await profile_model.objects.aget_or_create(user=instance)
 
 
 @receiver(post_delete, sender=ClientProfile, dispatch_uid='clientProfile.delete_user')
