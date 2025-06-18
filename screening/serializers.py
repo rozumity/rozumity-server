@@ -33,8 +33,17 @@ class QuestionaryDimensionValueSerializer(ReadOnlySerializerMixin, ModelSerializ
 
 
 class QuestionarySerializer(ReadOnlySerializerMixin, ModelSerializer):
+    class QuestionsSerializer(ReadOnlySerializerMixin, ModelSerializer):
+        class AnswerSerializer(ReadOnlySerializerMixin, ModelSerializer):
+            class Meta:
+                model, exclude = QuestionaryAnswer, ['question']
+        answers = AnswerSerializer(many=True, read_only=True)
+        class Meta:
+            model, exclude = QuestionaryQuestion, ['questionary']
+
     categories = QuestionaryCategorySerializer(many=True)
     tags = TagScreeningSerializer(many=True)
+    questions = QuestionsSerializer(many=True)
 
     class Meta:
         model = Questionary
