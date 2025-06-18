@@ -1,10 +1,124 @@
 from hashlib import md5
 from asgiref.sync import sync_to_async
+from adrf import mixins
+from adrf.viewsets import GenericViewSet
 from django.core.cache import cache
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from rozumity.mixins.filtering_mixins import OwnedList
+from rozumity.mixins.filtering_mixins import Owned
+
+
+async def generate_cache_key(class_name):
+    return md5(class_name.lower().encode()).hexdigest()
+
+
+async def generate_request_cache_key(request, is_personal=False):
+    cache_key = md5(request.get_full_path().encode()).hexdigest()
+    if is_personal:
+        cache_key = f'{cache_key}:{md5(str(request.user.id).encode()).hexdigest()}'
+    return cache_key
+
+
+async def get_data(serializer):
+    try:
+        data = await serializer.adata
+    except Exception:
+        data = await sync_to_async(getattr)(serializer, 'data')
+    return data
+
+
+class ListModelMixin(mixins.ListModelMixin):
+    async def alist(self, request, *args, **kwargs):
+        cache_key_page = await generate_request_cache_key(request, isinstance(self, Owned))
+        cache_key = await generate_cache_key(self.__class__.__name__)
+        if not await cache.ahas_key(cache_key_page):
+            queryset = self.filter_queryset(self.get_queryset())
+            page = await self.apaginate_queryset(queryset)
+            serializer = self.get_serializer(queryset if page is None else page, many=True)
+            id_name = getattr(serializer.__class__, "custom_id", "id")
+            data = await get_data(serializer)
+            data_ids, cached_data = [], {}
+            for item in data:
+                cache_key_id = f"{cache_key}:{item[id_name]}"
+                if not await cache.ahas_key(cache_key_id):
+                    cached_data[cache_key_id] = item
+                data_ids.append(item[id_name])
+            cached_data[cache_key_page] = data_ids
+            await cache.aset_many(cached_data, 100, None)
+            return await self.get_apaginated_response(data) if page is not None else Response(
+                data, status=status.HTTP_200_OK
+            )
+        cached_ids = await cache.aget(cache_key_page)
+        data = await cache.aget_many((f"{cache_key}:{id}" for id in cached_ids))
+        data = tuple(data.values())
+        if hasattr(self, "pagination_class"):
+            return await self.get_apaginated_response(
+                await self.apaginate_queryset(data)
+            )
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class RetrieveModelMixin(mixins.RetrieveModelMixin):
+    async def aretrieve(self, request, *args, **kwargs):
+        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}"
+        if await cache.ahas_key(cache_key):
+            return Response(await cache.aget(cache_key), status=status.HTTP_200_OK)
+        instance = await self.aget_object()
+        data = await get_data(self.get_serializer(instance, many=False))
+        await cache.aset(cache_key, data)
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class CreateModelMixin(mixins.CreateModelMixin):
+    async def acreate(self, request, *args, **kwargs):
+        response = await mixins.CreateModelMixin.acreate(self, request, *args, **kwargs)
+        data = response.data
+        id_name = getattr(self.serializer_class, "custom_id", "id")
+        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{data[id_name]}"
+        await cache.aset(cache_key, data)
+        return response
+
+
+class UpdateModelMixin(mixins.UpdateModelMixin):
+    async def aupdate(self, request, *args, **kwargs):
+        response = await mixins.UpdateModelMixin.aupdate(self, request, *args, **kwargs)
+        await cache.aset(
+            f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}",
+            response.data
+        )
+        return response
+
+
+class DestroyModelMixin(mixins.DestroyModelMixin):
+    async def adestroy(self, request, *args, **kwargs):
+        response = await mixins.DestroyModelMixin.adestroy(self, request, *args, **kwargs)
+        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}"
+        if await cache.ahas_key(cache_key):
+            await cache.adelete(cache_key)
+        return response
+
+
+class ReadOnlyModelViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
+    """
+    A viewset that provides default asynchronous `list()` and `retrieve()` actions.
+    """
+    pass
+
+
+class CachedModelViewSet(
+    CreateModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    GenericViewSet,
+):
+    """
+    A viewset that provides default asynchronous `create()`, `retrieve()`, `update()`,
+    `partial_update()`, `destroy()` and `list()` actions.
+    """
+    pass
 
 
 class CacheMixinBase:
@@ -13,7 +127,7 @@ class CacheMixinBase:
 
     async def _generate_request_cache_key(self, request):
         cache_key = md5(request.get_full_path().encode()).hexdigest()
-        if isinstance(self, OwnedList):
+        if isinstance(self, Owned):
             cache_key = f'{cache_key}:{md5(str(request.user.id).encode()).hexdigest()}'
         return cache_key
 
@@ -65,16 +179,13 @@ class CreateMixin(CacheMixinBase):
     async def post(self, request, *args, **kwargs):
         resp = await self.acreate(request, *args, **kwargs)
         id_name = getattr(self.serializer_class, "custom_id", "id")
-        try:
-            cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
-        except KeyError:
-            raise KeyError("Please specify the custom_id")
+        cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
         await cache.aset(cache_key, resp.data)
         return resp
 
 
 class RetrieveMixin(CacheMixinBase):
-    async def get(self, request, *args, **kwargs):
+    async def retrieve(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key))
@@ -126,7 +237,7 @@ class DestroyMixin(CacheMixinBase):
         return resp
 
 
-class ListCreateMixin(ListMixin, CreateMixin):
+class ListCreateMixin(ListModelMixin, CreateMixin):
     pass
 
 
@@ -146,35 +257,3 @@ class CacheMixin(
     ListMixin, CreateMixin, RetrieveMixin, UpdateMixin, DestroyMixin
 ):
     pass
-
-
-class CacheViewSetMixin(CacheMixinBase, viewsets.GenericViewSet):
-    async def list(self, request, *args, **kwargs):
-        mixin = ListMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.get(request, *args, **kwargs)
-
-    async def create(self, request, *args, **kwargs):
-        mixin = CreateMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.post(request, *args, **kwargs)
-
-    async def retrieve(self, request, *args, **kwargs):
-        mixin = RetrieveMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.get(request, *args, **kwargs)
-
-    async def update(self, request, *args, **kwargs):
-        mixin = UpdateMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.put(request, *args, **kwargs)
-
-    async def partial_update(self, request, *args, **kwargs):
-        mixin = UpdateMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.patch(request, *args, **kwargs)
-
-    async def destroy(self, request, *args, **kwargs):
-        mixin = DestroyMixin()
-        mixin.__dict__.update(self.__dict__)
-        return await mixin.delete(request, *args, **kwargs)
