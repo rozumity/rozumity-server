@@ -15,7 +15,7 @@ async def create_user_profile(sender, instance, created, **kwargs):
     elif instance.is_expert:
         profile_model = ExpertProfile
     try:
-        await profile_model.objects.acreate(user=instance)
+        await profile_model.objects.aget_or_create(user=instance)
     except IntegrityError:
         pass
 
