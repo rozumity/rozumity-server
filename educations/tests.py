@@ -1,12 +1,12 @@
 from django.test import TestCase
 from django.urls import reverse
 from rozumity.utils import rel
-from rozumity.mixins.testing_mixins import ProfileCreationMixin
+from rozumity.mixins.testing_mixins import APIClientTestMixin
 from educations.models import *
 
 
-class EducationTests(ProfileCreationMixin, TestCase):
-    fixtures = ['specialities_ukraine.json', 'universities_ukraine.json']
+class EducationTests(APIClientTestMixin, TestCase):
+    fixtures = ['specialities_ukraine.json', 'universities_ukraine.json', 'users.json']
     async def test_create_profiles(self):
         speciality = await Speciality.objects.acreate(
             code=222, title="Medicine", is_medical=True
@@ -54,9 +54,7 @@ class EducationTests(ProfileCreationMixin, TestCase):
 
     async def test_education(self):
         data = {
-            "client": self.profile_client.user_id,
-            "university": 1, "speciality": 1,
-            "degree": 5,
+            "university": 1, "speciality": 1, "degree": 5,
             "date_start": "2024-05-19",
             "date_end": "2025-05-19"
         }
@@ -77,8 +75,9 @@ class EducationTests(ProfileCreationMixin, TestCase):
         self.assertIn('"degree":5,', response.text)
 
         response = await self.api_client.get(
-            reverse("educations:educations-list-create"),
+            reverse("accounts:expert-profile", args=[self.profile_expert.id]),
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertIn('"degree":5,', response.text)

@@ -41,7 +41,10 @@ class LimitOffsetPagination(DRFLimitOffsetPagination):
     async def aget_count(self, queryset):
         if hasattr(queryset, "acount"):
             return await queryset.acount()
-        return len(await queryset)
+        try:
+            return len(await queryset)
+        except TypeError:
+            return len(queryset)
 
     async def paginate_queryset(self, queryset, request, view=None):
         try:
@@ -60,9 +63,10 @@ class LimitOffsetPagination(DRFLimitOffsetPagination):
 
         if self.count == 0 or self.offset > self.count:
             return []
-
-        return [item async for item in queryset[self.offset:self.offset + self.limit]]
-
+        try:
+            return [item async for item in queryset[self.offset:self.offset + self.limit]]
+        except TypeError:
+            return queryset[self.offset:self.offset + self.limit]
 
 class CursorPagination(DRFCursorPagination):
     async def paginate_queryset(self, queryset, request, view=None):

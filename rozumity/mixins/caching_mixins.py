@@ -9,42 +9,36 @@ from rozumity.mixins.filtering_mixins import OwnedList
 
 class CacheMixinBase:
     async def _generate_cache_key(self):
-        self.cache_key = md5(self.__class__.__name__.lower().encode()).hexdigest()
-        return self.cache_key
+        return md5(self.__class__.__name__.lower().encode()).hexdigest()
 
     async def _generate_request_cache_key(self, request):
-        self.cache_key = md5(request.get_full_path().encode()).hexdigest()
-        return self.cache_key
+        cache_key = md5(request.get_full_path().encode()).hexdigest()
+        if isinstance(self, OwnedList):
+            cache_key = f'{cache_key}:{md5(str(request.user.id).encode()).hexdigest()}'
+        return cache_key
 
 
 class ListMixin(CacheMixinBase):
     async def get(self, request, *args, **kwargs):
         cache_key_page = await self._generate_request_cache_key(request)
         cache_key = await self._generate_cache_key()
-        if isinstance(self, OwnedList):
-            cache_key_page = f'{cache_key_page}:{request.user.id}'
+        paginator_cls = getattr(self, "pagination_class", None)
+        if paginator_cls:
+            paginator = paginator_cls()
+            paginator.request = request
+            if "LimitOffset" in paginator_cls.__name__:
+                paginator.offset = paginator.get_offset(request)
+                paginator.limit = paginator.get_limit(request)
 
         if not await cache.ahas_key(cache_key_page):
             queryset = self.filter_queryset(self.get_queryset())
-            page = None
-
-            paginator_cls = getattr(self, "pagination_class", None)
-            if paginator_cls:
-                paginator = paginator_cls()
-                if hasattr(paginator, "apaginate_queryset"):
-                    page = await paginator.apaginate_queryset(queryset, request, view=self)
-                else:
-                    page = await paginator.paginate_queryset(queryset, request, view=self)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-            else:
-                serializer = self.get_serializer(queryset, many=True)
-
-            data = await serializer.adata if hasattr(serializer, "adata") else await sync_to_async(getattr)(serializer, 'data')
-            resp = await paginator.get_apaginated_response(data) if page is not None and hasattr(paginator, "get_apaginated_response") else Response(data, status=status.HTTP_200_OK)
-
+            data = await sync_to_async(getattr)(self.get_serializer(
+                queryset if not paginator else await paginator.paginate_queryset(
+                    queryset, request, view=self
+                ), many=True
+            ), 'data')
             id_name = getattr(self.serializer_class, "custom_id", "id")
-            items = resp.data.get("results", resp.data) if isinstance(resp.data, dict) else resp.data
+            items = data.get("results", data) if isinstance(data, dict) else data
             data_ids, cached_data = [], {}
             for item in items:
                 cache_key_id = f"{cache_key}:{item[id_name]}"
@@ -53,37 +47,23 @@ class ListMixin(CacheMixinBase):
                 data_ids.append(item[id_name])
             cached_data[cache_key_page] = data_ids
             await cache.aset_many(cached_data, 100, None)
-            return resp
+            return await sync_to_async(paginator.get_paginated_response)(data)
 
         cached_ids = await cache.aget(cache_key_page)
         data = await cache.aget_many((f"{cache_key}:{id}" for id in cached_ids))
-        data = list(data.values())
-
-        paginator_cls = getattr(self, "pagination_class", None)
+        data = tuple(data.values())
         if paginator_cls:
-            paginator = paginator_cls()
-            paginator.request = request
-            paginator_name = paginator.__class__.__name__
-            if hasattr(paginator, "get_apaginated_response"):
-                # TODO: offset limit and others formatting not empty list
-                if "LimitOffset" in paginator_name:
-                    paginator.count = len(data)
-                    paginator.offset = paginator.get_offset(request)
-                    paginator.limit = paginator.get_limit(request)
-                elif "PageNumber" in paginator_name or "Cursor" in paginator_name:
-                    paginator.page = data
-                return await paginator.get_apaginated_response(data)
+            if "LimitOffset" in paginator_cls.__name__:
+                paginator.count = await self.get_queryset().acount()
+            else:
+                paginator.page = data
+            return await sync_to_async(paginator.get_paginated_response)(data)
         return Response(data)
 
 
 class CreateMixin(CacheMixinBase):
     async def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        await serializer.is_valid(raise_exception=True)
-        await serializer.asave()
-        data = await serializer.adata if hasattr(serializer, "adata") else await sync_to_async(getattr)(serializer, 'data')
-        headers = self.get_success_headers(data)
-        resp = Response(data, status=status.HTTP_201_CREATED, headers=headers)
+        resp = await self.acreate(request, *args, **kwargs)
         id_name = getattr(self.serializer_class, "custom_id", "id")
         try:
             cache_key = f"{await self._generate_cache_key()}:{resp.data[id_name]}"
@@ -99,12 +79,12 @@ class RetrieveMixin(CacheMixinBase):
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key))
         else:
-            obj = await self.aget_object()
-            serializer = self.get_serializer(obj, many=False)
-            data = await serializer.adata if hasattr(serializer, "adata") else await sync_to_async(getattr)(serializer, 'data')
-            resp = Response(data, status=status.HTTP_200_OK)
-            await cache.aset(cache_key, resp.data)
-            return resp
+            serializer = self.get_serializer()
+            response = Response(await sync_to_async(
+                serializer.to_representation
+            )(await self.aget_object()))
+            await cache.aset(cache_key, response.data)
+            return response
 
 
 class UpdateMixin(CacheMixinBase):
@@ -112,12 +92,14 @@ class UpdateMixin(CacheMixinBase):
         partial = kwargs.pop("partial", False)
         instance = await self.aget_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        await serializer.is_valid(raise_exception=True)
+        await sync_to_async(serializer.is_valid)(raise_exception=True)
         await serializer.asave()
         if getattr(instance, "_prefetched_objects_cache", None):
             instance._prefetched_objects_cache = {}
-        data = await serializer.adata if hasattr(serializer, "adata") else await sync_to_async(getattr)(serializer, 'data')
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(
+            await sync_to_async(getattr)(serializer, 'data'),
+            status=status.HTTP_200_OK
+        )
 
     async def patch(self, request, *args, **kwargs):
         cache_key = f"{await self._generate_cache_key()}:{self.kwargs['pk']}"

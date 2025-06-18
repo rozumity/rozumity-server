@@ -54,11 +54,11 @@ class ClientProfileRetrieveUpdateView(
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsProfileOwnerWriteAuthRead,)
 
-    async def get_object(self):
-        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
+    def get_object(self):
+        obj = ClientProfile.objects.get(pk=self.kwargs["pk"])
         for permission in self.get_permissions():
             if hasattr(permission, "has_object_permission"):
-                if not await permission.has_object_permission(self.request, self, obj):
+                if not permission.has_object_permission(self.request, self, obj):
                     self.permission_denied(self.request)
         return obj
 
@@ -79,11 +79,11 @@ class ExpertProfileRetrieveUpdateView(
             return ExpertProfileReadOnlySerializer
         return ExpertProfileSerializer
 
-    async def get_object(self):
-        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
+    def get_object(self):
+        obj = ClientProfile.objects.get(pk=self.kwargs["pk"])
         for permission in self.get_permissions():
             if hasattr(permission, "has_object_permission"):
-                if not await permission.has_object_permission(self.request, self, obj):
+                if not permission.has_object_permission(self.request, self, obj):
                     self.permission_denied(self.request)
         return obj
 
@@ -141,11 +141,3 @@ class TherapyContractRetrieveUpdateView(
     ).all()
     serializer_class = TherapyContractSerializer
     permission_classes = (IsContractSigner,)
-
-    async def get_object(self):
-        obj = await ClientProfile.objects.aget(pk=self.kwargs["pk"])
-        for permission in self.get_permissions():
-            if hasattr(permission, "has_object_permission"):
-                if not await permission.has_object_permission(self.request, self, obj):
-                    self.permission_denied(self.request)
-        return obj
