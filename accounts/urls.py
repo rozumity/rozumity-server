@@ -4,12 +4,12 @@ from accounts import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path("users/", views.UserListView.as_view(), name="users-list"),
-    path("user/<uuid:pk>/", views.UserRetrieveView.as_view(), name="user-detail"),
-    path("profile/client/<uuid:pk>/", views.ClientProfileRetrieveUpdateView.as_view(), name="client-profile"),
-    path("profile/expert/<uuid:pk>/", views.ExpertProfileRetrieveUpdateView.as_view(), name="expert-profile"),
-    path("subscriptions/", views.SubscriptionPlanListView.as_view(), name="subscriptions"),
-    path("subscription/<int:pk>/", views.SubscriptionPlanRetrieveView.as_view(), name="subscription"),
-    path("contracts/", views.TherapyContractCreateView.as_view(), name="contracts"),
-    path("contract/<int:pk>/", views.TherapyContractRetrieveUpdateView.as_view(), name="contract"),
+    path("users/", views.UserReadOnlyViewSet.as_view({"get": "alist"}), name="users"),
+    path("user/<uuid:pk>/", views.UserReadOnlyViewSet.as_view({"get": "aretrieve"}), name="user"),
+    path("profile/client/<uuid:pk>/", views.ClientProfileViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="client-profile"),
+    path("profile/expert/<uuid:pk>/", views.ExpertProfileViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="expert-profile"),
+    path("subscriptions/", views.SubscriptionPlanReadOnlyViewSet.as_view({"get": "alist"}), name="subscriptions"),
+    path("subscription/<int:pk>/", views.SubscriptionPlanReadOnlyViewSet.as_view({"get": "aretrieve"}), name="subscription"),
+    path("contracts/", views.TherapyContractViewSet.as_view({"post": "acreate"}), name="contracts"),
+    path("contract/<int:pk>/", views.TherapyContractViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="contract"),
 ]
