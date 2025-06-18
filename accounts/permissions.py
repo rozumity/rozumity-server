@@ -13,6 +13,14 @@ class IsExpert(permissions.BasePermission):
         return False
 
 
+class IsClient(permissions.BasePermission):
+    async def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            profile = await get_profile(request)
+            return "client" in profile.__class__.__name__.lower()
+        return False
+
+
 class IsContractSigner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
