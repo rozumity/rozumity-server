@@ -72,12 +72,15 @@ class RetrieveModelMixin(mixins.RetrieveModelMixin):
 
 class CreateModelMixin(mixins.CreateModelMixin):
     async def acreate(self, request, *args, **kwargs):
-        response = await mixins.CreateModelMixin.acreate(self, request, *args, **kwargs)
-        data = response.data
+        serializer = self.get_serializer(data=request.data)
+        await sync_to_async(serializer.is_valid)(raise_exception=True)
+        await self.perform_acreate(serializer)
+        data = await get_data(serializer)
+        headers = self.get_success_headers(data)
         id_name = getattr(self.serializer_class, "custom_id", "id")
         cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{data[id_name]}"
         await cache.aset(cache_key, data)
-        return response
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class UpdateModelMixin(mixins.UpdateModelMixin):
