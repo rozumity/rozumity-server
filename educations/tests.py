@@ -22,7 +22,7 @@ class EducationTests(APIClientTestMixin, TestCase):
 
     async def test_university_list(self):
         response = await self.api_client.get(
-            reverse("educations:universities-list"), 
+            reverse("educations:universities"), 
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
         self.assertEqual(response.status_code, 200)
@@ -30,7 +30,7 @@ class EducationTests(APIClientTestMixin, TestCase):
 
     async def test_university_detail(self):
         response = await self.api_client.get(
-            reverse("educations:university-detail", args=[1]),
+            reverse("educations:university", args=[1]),
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
         self.assertEqual(response.status_code, 200)
@@ -38,7 +38,7 @@ class EducationTests(APIClientTestMixin, TestCase):
 
     async def test_speciality_list(self):
         response = await self.api_client.get(
-            reverse("educations:specialities-list"),
+            reverse("educations:specialities"),
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
         self.assertEqual(response.status_code, 200)
@@ -46,7 +46,7 @@ class EducationTests(APIClientTestMixin, TestCase):
 
     async def test_speciality_detail(self):
         response = await self.api_client.get(
-            reverse("educations:speciality-detail", args=[1]),
+            reverse("educations:speciality", args=[1]),
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
         self.assertEqual(response.status_code, 200)
@@ -59,16 +59,13 @@ class EducationTests(APIClientTestMixin, TestCase):
             "date_end": "2025-05-19"
         }
         
-        response = await self.api_client.post(
-            reverse("educations:educations-list-create"), json=data,
-            headers={"Authorization": f"Bearer {self.token_expert}"}
-        )
+        response = await self.api("post", reverse("educations:educations"), data, self.token_expert)
         self.assertIn(response.status_code, (200, 201))
         self.assertIn('"degree":5,', response.text)
         await self.profile_expert.education.aset([await Education.objects.aget(pk=response.json()["id"])])
         
         response = await self.api_client.get(
-            reverse("educations:education-detail", args=[response.json()["id"]]),
+            reverse("educations:education", args=[response.json()["id"]]),
             headers={"Authorization": f"Bearer {self.token_expert}"}
         )
         self.assertEqual(response.status_code, 200)

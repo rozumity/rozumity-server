@@ -1,7 +1,14 @@
+from django.urls import reverse
 from django.test import TestCase
 from rozumity.mixins.testing_mixins import APIClientTestMixin
 from screening.models import *
 from screening.views import *
+
+
+async def get_data(serializer):
+    """Use adata if the serializer supports it, data otherwise."""
+    return await serializer.adata if hasattr(serializer, "adata") else serializer.data
+
 
 class ScreeningClientTests(APIClientTestMixin, TestCase):
     @classmethod
@@ -60,7 +67,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
     # Category
     async def test_category_list(self):
         response = await self.api(
-            "get", "/api/screening/questionaries/categories/", {}, self.token_client
+            "get", reverse("screening:questionaries-categories"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("category 1", response.text)
@@ -68,14 +75,14 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
     # Questionary
     async def test_questionary_list(self):
         response = await self.api(
-            "get", "/api/screening/questionaries/questionaries/", {}, self.token_client
+            "get", reverse("screening:questionaries-questionaries"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("questionary 1", response.text)
 
     async def test_questionary_detail(self):
         response = await self.api(
-            "get", f"/api/screening/questionaries/questionary/{self.questionary.pk}/",
+            "get", reverse("screening:questionaries-questionary", args=[self.questionary.pk]),
             {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
@@ -84,7 +91,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
     # Answer
     async def test_answer_list(self):
         response = await self.api(
-            "get", "/api/screening/questionaries/answers/", {}, self.token_client
+            "get", reverse("screening:questionaries-answers"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("answer 1", response.text)
@@ -95,8 +102,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             client=self.profile_client, questionary=self.questionary
         )
         response = await self.api(
-            "get", "/api/screening/questionaries/responses/",
-            {}, self.token_client
+            "get", reverse("screening:questionaries-responses"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("title", response.text)
@@ -106,7 +112,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             client=self.profile_client, questionary=self.questionary
         )
         response = await self.api(
-            "get", f"/api/screening/questionaries/response/{self.response.pk}/",
+            "get", reverse("screening:questionaries-response", args=[self.response.pk]),
             {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
@@ -117,26 +123,26 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             client=self.profile_client, questionary=self.questionary
         )
         response = await self.api(
-            "get", f"/api/screening/questionaries/response/{self.response.pk}/",
+            "get", reverse("screening:questionaries-response", args=[self.response.pk]),
             {}, self.token_expert
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     async def test_get_questionaries_by_category_tag(self):
         responses = [
-            self.api(
-                "get", "/api/screening/questionaries/questionaries/",
+            await self.api(
+                "get", reverse("screening:questionaries-questionaries"), 
                 {"categories": [self.category.id], "tags":[self.tag.id]},
                 self.token_client
             ),
-            self.api(
-                "get", "/api/screening/questionaries/questionaries/",
+            await self.api(
+                "get", reverse("screening:questionaries-questionaries"),
                 {"categories": [99999], "tags":[99999]},
                 self.token_client
             )
         ]
-        response_ok = getattr(await responses[0], 'json')()['results'][0]
-        response_empty = getattr(await responses[1], 'json')()['results']
+        response_ok = responses[0].json()['results'][0]
+        response_empty = responses[1].json()['results']
         self.assertIn({
             'id': 1, 'title': 'category 1', 'description': 'description 1', 'is_active': True
         }, response_ok["categories"])
@@ -148,14 +154,15 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
 
     async def test_get_questionary_by_id(self):
         responses = [
-            self.api(
-                "get", f"/api/screening/questionaries/questionary/{self.questionary.id}/", token=self.token_client
+            await self.api(
+                "get", reverse("screening:questionaries-questionary", args=[self.questionary.id]), token=self.token_client
             ),
-            self.api(
+            await self.api(
                 "get", "/api/screening/questionaries/questionary/999999/", token=self.token_client
             ),
         ]
-        response_ok, response_fail = getattr(await responses[0], 'json')(), await responses[1]
+        response_ok = responses[0].json()
+        response_fail = responses[1]
         self.assertIn({
             'id': 1, 'title': 'category 1', 'description': 'description 1', 'is_active': True
         }, response_ok["categories"])
