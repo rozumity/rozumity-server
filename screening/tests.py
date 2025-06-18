@@ -5,11 +5,6 @@ from screening.models import *
 from screening.views import *
 
 
-async def get_data(serializer):
-    """Use adata if the serializer supports it, data otherwise."""
-    return await serializer.adata if hasattr(serializer, "adata") else serializer.data
-
-
 class ScreeningClientTests(APIClientTestMixin, TestCase):
     @classmethod
     def setUpClass(cls):
@@ -64,23 +59,24 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         )
         cls.answer.values.set([cls.value, cls.value2])
 
-    # Category
-    async def test_category_list(self):
+    async def test_category_tag(self):
+        response = await self.api(
+            "get", reverse("screening:questionaries-tags"), {}, self.token_client
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("tag 1", response.text)
         response = await self.api(
             "get", reverse("screening:questionaries-categories"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("category 1", response.text)
 
-    # Questionary
-    async def test_questionary_list(self):
+    async def test_questionary(self):
         response = await self.api(
             "get", reverse("screening:questionaries-questionaries"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("questionary 1", response.text)
-
-    async def test_questionary_detail(self):
         response = await self.api(
             "get", reverse("screening:questionaries-questionary", args=[self.questionary.pk]),
             {}, self.token_client
@@ -88,16 +84,14 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("questionary 1", response.text)
 
-    # Answer
-    async def test_answer_list(self):
+    async def test_answer(self):
         response = await self.api(
             "get", reverse("screening:questionaries-answers"), {}, self.token_client
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("answer 1", response.text)
 
-    # Response
-    async def test_response_list(self):
+    async def test_response(self):
         self.response = await QuestionaryResponse.objects.acreate(
             client=self.profile_client, questionary=self.questionary
         )
@@ -106,8 +100,6 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("title", response.text)
-
-    async def test_response_detail(self):
         self.response = await QuestionaryResponse.objects.acreate(
             client=self.profile_client, questionary=self.questionary
         )
@@ -117,8 +109,6 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn('"questionary":{"id":', response.text)
-
-    async def test_response_detail_forbidden(self):
         self.response = await QuestionaryResponse.objects.acreate(
             client=self.profile_client, questionary=self.questionary
         )
@@ -129,44 +119,38 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
     async def test_get_questionaries_by_category_tag(self):
-        responses = [
-            await self.api(
-                "get", reverse("screening:questionaries-questionaries"), 
-                {"categories": [self.category.id], "tags":[self.tag.id]},
-                self.token_client
-            ),
-            await self.api(
-                "get", reverse("screening:questionaries-questionaries"),
-                {"categories": [99999], "tags":[99999]},
-                self.token_client
-            )
-        ]
-        response_ok = responses[0].json()['results'][0]
-        response_empty = responses[1].json()['results']
+        response = getattr(await self.api(
+            "get", reverse("screening:questionaries-questionaries"), 
+            {"categories": [self.category.id], "tags":[self.tag.id]}, self.token_client
+        ), "json")()['results'][0]
         self.assertIn({
-            'id': 1, 'title': 'category 1', 'description': 'description 1', 'is_active': True
-        }, response_ok["categories"])
+            'id': 1, 'title': 'category 1', 
+            'description': 'description 1', 'is_active': True
+        }, response["categories"])
         self.assertIn({
-            'id': 1, 'title': 'tag 1', 'description': 'description 1', 'color': '#FFFFFF', 'is_active': True
-        }, response_ok["tags"])
-        self.assertEqual(response_empty, [])
+            'id': 1, 'title': 'tag 1', 'description': 'description 1', 
+            'color': '#FFFFFF', 'is_active': True
+        }, response["tags"])
+        response = await self.api(
+            "get", reverse("screening:questionaries-questionaries"),
+            {"categories": [99999], "tags":[99999]}, self.token_client
+        )
+        self.assertEqual(response.json()['results'], [])
 
-
-    async def test_get_questionary_by_id(self):
-        responses = [
-            await self.api(
-                "get", reverse("screening:questionaries-questionary", args=[self.questionary.id]), token=self.token_client
-            ),
-            await self.api(
-                "get", "/api/screening/questionaries/questionary/999999/", token=self.token_client
-            ),
-        ]
-        response_ok = responses[0].json()
-        response_fail = responses[1]
+    async def test_user_questionary_response_flow(self):
+        response = getattr(await self.api(
+            "get", "/api/screening/questionaries/questionary/999999/", token=self.token_client
+        ), "json")()
+        self.assertDictEqual({'detail': 'No Questionary matches the given query.'}, response)
+        response = getattr(await self.api(
+            "get", reverse("screening:questionaries-questionary", args=[self.questionary.id]), 
+            token=self.token_client
+        ), "json")()
         self.assertIn({
-            'id': 1, 'title': 'category 1', 'description': 'description 1', 'is_active': True
-        }, response_ok["categories"])
+            'id': 1, 'title': 'category 1', 
+            'description': 'description 1', 'is_active': True
+        }, response["categories"])
         self.assertIn({
-            'id': 1, 'title': 'tag 1', 'description': 'description 1', 'color': '#FFFFFF', 'is_active': True
-        }, response_ok["tags"])
-        self.assertDictEqual({'detail': 'No Questionary matches the given query.'}, response_fail.json())
+            'id': 1, 'title': 'tag 1', 'description': 'description 1', 
+            'color': '#FFFFFF', 'is_active': True
+        }, response["tags"])
