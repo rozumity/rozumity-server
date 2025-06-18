@@ -1,5 +1,4 @@
 # python manage.py test
-# python ../manage.py test accounts
 import asyncio
 from httpx import AsyncClient, ASGITransport
 from django.contrib.auth import get_user_model
@@ -59,46 +58,6 @@ class APIClientTestMixin:
         if method == 'get':
             return await req(url, headers=headers, params=data)
         return await req(url, headers=headers, json=data)
-        
-    async def api_get(self, url, token=None):
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        async with self.api_client as ac:
-            response = await ac.get(url, headers=headers)
-        return response
-
-    async def api_post(self, url, data=None, token=None):
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        async with self.api_client as ac:
-            response = await ac.post(url, json=data or {}, headers=headers)
-        return response
-
-    async def api_patch(self, url, data=None, token=None):
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        async with self.api_client as ac:
-            response = await ac.patch(url, json=data or {}, headers=headers)
-        return response
-
-    async def api_put(self, url, data=None, token=None):
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        async with self.api_client as ac:
-            response = await ac.put(url, json=data or {}, headers=headers)
-        return response
-
-    async def api_delete(self, url, token=None):
-        headers = {}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        async with self.api_client as ac:
-            response = await ac.delete(url, headers=headers)
-        return response
 
 
 class ProfileCreationMixin:
