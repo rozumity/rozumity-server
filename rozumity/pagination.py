@@ -44,7 +44,10 @@ class LimitOffsetPagination(DRFLimitOffsetPagination):
         return len(await queryset)
 
     async def paginate_queryset(self, queryset, request, view=None):
-        queryset = await queryset
+        try:
+            queryset = await queryset
+        except TypeError:
+            pass
         self.request = request
         self.limit = self.get_limit(request)
         if self.limit is None:
