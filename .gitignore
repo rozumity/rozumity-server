@@ -172,3 +172,6 @@ cython_debug/
 
 # Django
 staticfiles
+**/migrations/*.py
+!**/migrations/__init__.py
+**/migrations/*.pyc
