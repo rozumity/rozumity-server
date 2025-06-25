@@ -6,3 +6,6 @@ class ScreeningConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'screening'
     verbose_name = _('Screening')
+
+    def ready(self):
+        import screening.signals
