@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django_countries',
     'drf_spectacular',
     'djmoney',
+    'django_ckeditor_5',
     'rozumity',
     'accounts',
     'educations',
@@ -221,4 +222,16 @@ DAISY_SETTINGS = {
             'divider_title': "Management"
         }
     },
+}
+
+CKEDITOR_5_UPLOAD_PATH = "uploads/"
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote'
+        ],
+        'placeholder': 'Start typing here...',
+        'language': 'en',
+        'removePlugins': ['CKLogo', 'About']
+    }
 }
