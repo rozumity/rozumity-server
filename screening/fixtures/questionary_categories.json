@@ -1,6 +1,6 @@
 [
     {
-        "model": "screening.QuestionaryCategory",
+        "model": "screening.CategoryScreening",
         "pk": 1,
         "fields": {
             "title": "Психологічні тести",
@@ -8,7 +8,7 @@
         }
     },
     {
-        "model": "screening.QuestionaryCategory",
+        "model": "screening.CategoryScreening",
         "pk": 2,
         "fields": {
             "title": "Профорієнтаційні тести",
@@ -16,7 +16,7 @@
         }
     },
     {
-        "model": "screening.QuestionaryCategory",
+        "model": "screening.CategoryScreening",
         "pk": 3,
         "fields": {
             "title": "Освітні тести",
@@ -24,7 +24,7 @@
         }
     },
     {
-        "model": "screening.QuestionaryCategory",
+        "model": "screening.CategoryScreening",
         "pk": 4,
         "fields": {
             "title": "Медичні тести",
