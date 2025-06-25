@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rozumity.mixins.filtering_mixins import Owned
 
 
-async def generate_cache_key(class_name):
-    return md5(class_name.lower().encode()).hexdigest()
+async def generate_cache_key(view):
+    model_name = view.get_serializer_class()
+    return md5(model_name.Meta.model.__name__.lower().encode()).hexdigest()
 
 
 async def generate_request_cache_key(request, is_personal=False):
@@ -31,7 +32,7 @@ async def get_data(serializer):
 class ListModelMixin(mixins.ListModelMixin):
     async def alist(self, request, *args, **kwargs):
         cache_key_page = await generate_request_cache_key(request, isinstance(self, Owned))
-        cache_key = await generate_cache_key(self.__class__.__name__)
+        cache_key = await generate_cache_key(self)
         if not await cache.ahas_key(cache_key_page):
             queryset = self.filter_queryset(self.get_queryset())
             page = await self.apaginate_queryset(queryset)
@@ -61,7 +62,7 @@ class ListModelMixin(mixins.ListModelMixin):
 
 class RetrieveModelMixin(mixins.RetrieveModelMixin):
     async def aretrieve(self, request, *args, **kwargs):
-        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}"
+        cache_key = f"{await generate_cache_key(self)}:{self.kwargs['pk']}"
         if await cache.ahas_key(cache_key):
             return Response(await cache.aget(cache_key), status=status.HTTP_200_OK)
         instance = await self.aget_object()
@@ -78,7 +79,7 @@ class CreateModelMixin(mixins.CreateModelMixin):
         data = await get_data(serializer)
         headers = self.get_success_headers(data)
         id_name = getattr(self.serializer_class, "custom_id", "id")
-        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{data[id_name]}"
+        cache_key = f"{await generate_cache_key(self)}:{data[id_name]}"
         await cache.aset(cache_key, data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -87,7 +88,7 @@ class UpdateModelMixin(mixins.UpdateModelMixin):
     async def aupdate(self, request, *args, **kwargs):
         response = await mixins.UpdateModelMixin.aupdate(self, request, *args, **kwargs)
         await cache.aset(
-            f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}",
+            f"{await generate_cache_key(self)}:{self.kwargs['pk']}",
             response.data
         )
         return response
@@ -96,7 +97,7 @@ class UpdateModelMixin(mixins.UpdateModelMixin):
 class DestroyModelMixin(mixins.DestroyModelMixin):
     async def adestroy(self, request, *args, **kwargs):
         response = await mixins.DestroyModelMixin.adestroy(self, request, *args, **kwargs)
-        cache_key = f"{await generate_cache_key(self.__class__.__name__)}:{self.kwargs['pk']}"
+        cache_key = f"{await generate_cache_key(self)}:{self.kwargs['pk']}"
         if await cache.ahas_key(cache_key):
             await cache.adelete(cache_key)
         return response

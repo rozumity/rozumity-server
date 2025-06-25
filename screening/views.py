@@ -21,9 +21,9 @@ class TagScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
     }
 
 
-class QuestionaryCategoryReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
-    queryset = QuestionaryCategory.objects.all()
-    serializer_class = QuestionaryCategorySerializer
+class CategoryScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
+    queryset = CategoryScreening.objects.all()
+    serializer_class = CategoryScreeningSerializer
     permission_classes = (IsUser,)
     descriptions = {
         'list': 'API view to retrieve a list of all questionary categories.',
@@ -45,9 +45,9 @@ class QuestionaryReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
         categories = self.request.query_params.getlist("categories")
         tags = self.request.query_params.getlist("tags")
         if categories:
-            qs = qs.filter(categories__in=categories)
+            qs = qs.filter(questionary_to_category__category__in=categories)
         if tags:
-            qs = qs.filter(tags__in=tags)
+            qs = qs.filter(questionary_to_tag__tag__in=tags)
         return qs.distinct()
     
     @extend_schema(parameters=[
@@ -74,6 +74,7 @@ class QuestionaryAnswerReadOnlyViewSet(Owned, ReadOnlyModelViewSet, SchemaMixin)
 class QuestionaryResponseViewSet(Owned, CachedModelViewSet, SchemaMixin):
     queryset = QuestionaryResponse.objects.all()
     permission_classes = (IsResponsePublic,)
+    serializer_class = QuestionaryResponseSerializer
     descriptions = {
         'list': 'API view to list questionary responses.\nUses ownership filtering.',
         'create': 'API view to create questionary responses.',
@@ -81,11 +82,6 @@ class QuestionaryResponseViewSet(Owned, CachedModelViewSet, SchemaMixin):
         'update': 'API view to update a single questionary response by its ID.\nUses ownership access.',
         'partial_update': 'API view to partial update a single questionary response by its ID.\nUses ownership access.'
     }
-
-    def get_serializer_class(self):
-        if self.request.method.lower() == 'get':
-            return QuestionaryResponseReadOnlySerializer
-        return QuestionaryResponseSerializer
 
     async def acreate(self, request, *args, **kwargs):
         request.data['client'] = str(request.user.id)
