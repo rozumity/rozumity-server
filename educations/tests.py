@@ -6,7 +6,8 @@ from educations.models import *
 
 
 class EducationTests(APIClientTestMixin, TestCase):
-    fixtures = ['specialities_ukraine.json', 'universities_ukraine.json', 'users.json']
+    fixtures = ['specialities_ukraine.json', 'universities_ukraine.json', 'users.json', 'subscription_plans.json']
+
     async def test_create_profiles(self):
         speciality = await Speciality.objects.acreate(
             code=222, title="Medicine", is_medical=True

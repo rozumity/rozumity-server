@@ -4,6 +4,7 @@ from django.core.cache import cache
 from rozumity.mixins.testing_mixins import APIClientTestMixin
 from screening.models import *
 from screening.views import *
+from accounts.models import TherapyContract
 
 
 class ScreeningClientTests(APIClientTestMixin, TestCase):
@@ -113,7 +114,27 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             "get", reverse("screening:questionaries-response", args=[self.response.pk]),
             {}, self.token_expert
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
+
+        response = getattr(await self.api(
+            "patch", reverse(
+                "screening:questionaries-response", 
+                args=[self.response.pk]
+            ), {"is_public_expert": True}, self.token_client
+        ), "json")()
+        response = await self.api(
+            "get", reverse("screening:questionaries-response", args=[self.response.pk]),
+            {}, self.token_expert
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("'is_public_expert': True", str(getattr(response, 'json')()))
+        response = await self.api(
+            "get", reverse("screening:questionaries-responses"),
+            {}, self.token_expert
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("'is_public_expert': True", str(getattr(response, 'json')()))
+        
 
     async def test_get_questionary(self):
         response = await self.api(
@@ -222,3 +243,10 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             ), {"is_filled": False, "is_checked": False}, token=self.token_client
         ), "json")()
         self.assertFalse(len(response['results']))
+
+        response = await self.api(
+            "get", reverse("screening:questionaries-responses"),
+            {}, self.token_expert
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(getattr(response, 'json')()['results'], [])

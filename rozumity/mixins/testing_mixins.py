@@ -5,12 +5,14 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from asgiref.sync import sync_to_async
 from rozumity.asgi import application
-from accounts.models import ClientProfile, ExpertProfile
+from accounts.models import (
+    ClientProfile, ExpertProfile, TherapyContract, SubscriptionPlan
+)
 from educations.models import *
 
 
 class APIClientTestMixin:
-    fixtures = ['users.json']
+    fixtures = ['users.json', 'subscription_plans.json']
 
     @classmethod
     def setUpClass(cls):
@@ -20,6 +22,11 @@ class APIClientTestMixin:
         cls.user_expert = user_model.objects.filter(is_expert=True).first()
         cls.profile_client = ClientProfile.objects.filter(pk=cls.user_client.id).first()
         cls.profile_expert = ExpertProfile.objects.filter(pk=cls.user_expert.id).first()
+        cls.subscription_expert = SubscriptionPlan.objects.get(owner_type=1)
+        cls.therapy_contract = TherapyContract.objects.create(
+            client=cls.profile_client, expert=cls.profile_expert, 
+            expert_plan=cls.subscription_expert, expert_plan_days=30
+        )
         cls.api_client = AsyncClient(
             transport=ASGITransport(app=application), 
             base_url="http://testserver"
