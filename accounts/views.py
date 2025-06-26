@@ -43,11 +43,12 @@ class ExpertProfileViewSet(Owned, AsyncModelViewSet):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     permission_classes = (IsProfileOwnerWriteAuthRead,)
     throttle_classes = (UserRateAsyncThrottle,)
+    serializer_class = ExpertProfileReadOnlySerializer
     
     def get_serializer_class(self):
-        if self.request.method.lower() == 'get':
-            return ExpertProfileReadOnlySerializer
-        return ExpertProfileSerializer
+        if self.request.method.lower() != 'get':
+            return ExpertProfileSerializer
+        return ExpertProfileReadOnlySerializer
 
 
 class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
