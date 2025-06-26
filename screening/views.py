@@ -8,6 +8,7 @@ from rozumity.permissions import *
 from screening.permissions import *
 from screening.models import *
 from screening.serializers import *
+from accounts.utils import get_profile
 
 
 class TagScreeningReadOnlyViewSet(AsyncReadOnlyModelViewSet):
@@ -39,7 +40,7 @@ class QuestionaryReadOnlyViewSet(AsyncReadOnlyModelViewSet):
         'retrieve': 'API view to retrieve a single questionary by its ID.'
     }
 
-    def get_queryset(self):
+    async def get_queryset(self):
         qs = Questionary.objects.all()
         categories = self.request.query_params.getlist("categories")
         tags = self.request.query_params.getlist("tags")
@@ -103,15 +104,23 @@ class QuestionaryResponseViewSet(Owned, AsyncModelViewSet):
         request.data['client'] = str(request.user.id)
         return await AsyncModelViewSet.acreate(self, request, *args, **kwargs)
 
-    def get_queryset(self):
-        qs = self.queryset
+    async def get_queryset(self):
+        qs, user = self.queryset, self.request._user
         questionary_id = self.request.query_params.get("questionary")
-        is_filled = self.request.query_params.get("is_filled", None)
-        is_checked = self.request.query_params.get("is_checked", None)
         if questionary_id:
             qs = qs.filter(questionary_id=int(questionary_id))
+        is_filled = self.request.query_params.get("is_filled", None)
+        is_checked = self.request.query_params.get("is_checked", None)
         if is_filled is not None:
             qs = qs.filter(is_filled=is_filled == 'true')
         if is_checked is not None:
             qs = qs.filter(is_checked=is_checked == 'true')
+        if user.is_expert:
+            profile = await get_profile(self.request)
+            clients = await profile.clients
+            qs = qs.filter(is_public_expert=True)
+            if len(clients):
+                qs = qs.filter(client__in=clients)
+            else:
+                qs = qs.filter(client_id=profile.id)
         return qs.distinct()
