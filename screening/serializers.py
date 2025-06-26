@@ -3,28 +3,28 @@ from adrf.serializers import ModelSerializer
 from accounts.serializers import ClientProfileSerializer
 from accounts.models import ClientProfile
 from screening.models import *
-from rozumity.mixins.serialization_mixins import ReadOnlySerializerMixin, AsyncSerializerMixin
+from rozumity.mixins.serialization_mixins import ReadOnlySerializerMixin
 
 
-class TagScreeningSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class TagScreeningSerializer(ReadOnlySerializerMixin, ModelSerializer):
     class Meta:
         model = TagScreening
         fields = "__all__"
 
 
-class CategoryScreeningSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class CategoryScreeningSerializer(ReadOnlySerializerMixin, ModelSerializer):
     class Meta:
         model = CategoryScreening
         fields = "__all__"
 
 
-class QuestionaryDimensionSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryDimensionSerializer(ReadOnlySerializerMixin, ModelSerializer):
     class Meta:
         model = QuestionaryDimension
         fields = "__all__"
 
 
-class QuestionaryDimensionValueSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryDimensionValueSerializer(ReadOnlySerializerMixin, ModelSerializer):
     dimension = QuestionaryDimensionSerializer()
 
     class Meta:
@@ -32,9 +32,9 @@ class QuestionaryDimensionValueSerializer(ReadOnlySerializerMixin, AsyncSerializ
         exclude = ('answer',)
 
 
-class QuestionarySerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
-    class QuestionsSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
-        class AnswerSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionarySerializer(ReadOnlySerializerMixin, ModelSerializer):
+    class QuestionsSerializer(ReadOnlySerializerMixin, ModelSerializer):
+        class AnswerSerializer(ReadOnlySerializerMixin, ModelSerializer):
             class Meta:
                 model, exclude = QuestionaryAnswer, ['question', 'dimensions']
         answers = AnswerSerializer(many=True, read_only=True)
@@ -50,7 +50,7 @@ class QuestionarySerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, Model
         fields = "__all__"
 
 
-class QuestionaryScoreSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryScoreSerializer(ReadOnlySerializerMixin, ModelSerializer):
     dimension = QuestionaryDimensionSerializer()
     questionary = QuestionarySerializer()
 
@@ -59,7 +59,7 @@ class QuestionaryScoreSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, 
         fields = "__all__"
 
 
-class QuestionaryScoreExtraSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryScoreExtraSerializer(ReadOnlySerializerMixin, ModelSerializer):
     scores = QuestionaryScoreSerializer(many=True)
     questionary = QuestionarySerializer()
 
@@ -68,7 +68,7 @@ class QuestionaryScoreExtraSerializer(ReadOnlySerializerMixin, AsyncSerializerMi
         fields = "__all__"
 
 
-class QuestionaryQuestionSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryQuestionSerializer(ReadOnlySerializerMixin, ModelSerializer):
     questionary = QuestionarySerializer()
 
     class Meta:
@@ -76,7 +76,7 @@ class QuestionaryQuestionSerializer(ReadOnlySerializerMixin, AsyncSerializerMixi
         fields = "__all__"
 
 
-class QuestionaryAnswerSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryAnswerSerializer(ReadOnlySerializerMixin, ModelSerializer):
     question = QuestionaryQuestionSerializer()
     values = QuestionaryDimensionValueSerializer(many=True, source='dimension_values')
 
@@ -85,13 +85,13 @@ class QuestionaryAnswerSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin,
         fields = "__all__"
 
 
-class QuestionaryResponseSerializer(AsyncSerializerMixin, ModelSerializer):
-    class QuestionaryScoreSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+class QuestionaryResponseSerializer(ModelSerializer):
+    class QuestionaryScoreSerializer(ReadOnlySerializerMixin, ModelSerializer):
         dimension = QuestionaryDimensionSerializer()
         class Meta:
             model = QuestionaryScore
             exclude = ('questionary',)
-    class QuestionaryScoreExtraSerializer(ReadOnlySerializerMixin, AsyncSerializerMixin, ModelSerializer):
+    class QuestionaryScoreExtraSerializer(ReadOnlySerializerMixin, ModelSerializer):
         class Meta:
             model = QuestionaryScore
             fields = "__all__"
