@@ -14,9 +14,10 @@ class IsResponsePublic(BasePermission):
                 return True
             obj = await view.aget_object()
             client = await rel(obj, "client")
+            expert_emails = set([await e.user_email for e in await client.experts])
             if obj.is_public and request.method == "GET":
                 return True
-            if obj.is_public_expert and await client.expert_email == request.user.email:
+            if obj.is_public_expert and request._user.email in expert_emails:
                 return True
             return False
         return True
