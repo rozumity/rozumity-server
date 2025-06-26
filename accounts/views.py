@@ -1,19 +1,18 @@
 from rozumity.throttling import UserRateAsyncThrottle
 
-from rozumity.mixins.caching_mixins import (
-    ReadOnlyModelViewSet, CachedModelViewSet, Owned
+from rozumity.mixins.views_mixins import (
+    AsyncModelViewSet, AsyncReadOnlyModelViewSet, Owned
 )
 
 from rozumity.permissions import *
-from accounts.permissions import (
-    IsContractSigner, IsProfileOwnerWriteAuthRead
-)
+from accounts.permissions import IsProfileOwnerWriteAuthRead
+
 
 from .models import *
 from .serializers import *
 
 
-class UserReadOnlyViewSet(ReadOnlyModelViewSet):
+class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     """
     API view to retrieve a list of all users.
     Only accessible to admin users.
@@ -25,7 +24,7 @@ class UserReadOnlyViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAdmin,)
 
 
-class ClientProfileViewSet(Owned, CachedModelViewSet):
+class ClientProfileViewSet(Owned, AsyncModelViewSet):
     """
     API view to retrieve or update a client profile.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
@@ -36,7 +35,7 @@ class ClientProfileViewSet(Owned, CachedModelViewSet):
     permission_classes = (IsProfileOwnerWriteAuthRead,)
 
 
-class ExpertProfileViewSet(Owned, CachedModelViewSet):
+class ExpertProfileViewSet(Owned, AsyncModelViewSet):
     """
     API view to retrieve or update an expert profile.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
@@ -51,7 +50,7 @@ class ExpertProfileViewSet(Owned, CachedModelViewSet):
         return ExpertProfileSerializer
 
 
-class SubscriptionPlanReadOnlyViewSet(ReadOnlyModelViewSet):
+class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     """
     API view to retrieve a list of all subscription plans.
     Only accessible to authenticated users.
@@ -64,7 +63,7 @@ class SubscriptionPlanReadOnlyViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsUser,)
 
 
-class TherapyContractViewSet(Owned, CachedModelViewSet):
+class TherapyContractViewSet(Owned, AsyncModelViewSet):
     """
     API view to create a new therapy contract.
     Only accessible to authenticated users.

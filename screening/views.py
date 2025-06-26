@@ -1,17 +1,16 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from rozumity.mixins.caching_mixins import *
-from rozumity.mixins.schema_mixins import *
+from rozumity.mixins.views_mixins import (
+    AsyncModelViewSet, AsyncReadOnlyModelViewSet, Owned
+)
 
 from rozumity.permissions import *
-from rozumity.mixins.filtering_mixins import Owned
 from screening.permissions import *
-
 from screening.models import *
 from screening.serializers import *
 
 
-class TagScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
+class TagScreeningReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     queryset = TagScreening.objects.all()
     serializer_class = TagScreeningSerializer
     permission_classes = (IsUser,)
@@ -21,7 +20,7 @@ class TagScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
     }
 
 
-class CategoryScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
+class CategoryScreeningReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     queryset = CategoryScreening.objects.all()
     serializer_class = CategoryScreeningSerializer
     permission_classes = (IsUser,)
@@ -31,7 +30,7 @@ class CategoryScreeningReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
     }
 
 
-class QuestionaryReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
+class QuestionaryReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     queryset = Questionary.objects.all()
     serializer_class = QuestionarySerializer
     permission_classes = (IsUser,)
@@ -61,17 +60,17 @@ class QuestionaryReadOnlyViewSet(ReadOnlyModelViewSet, SchemaMixin):
         ),
     ])
     async def alist(self, request, *args, **kwargs):
-        return await super().alist(request, *args, **kwargs)
+        return await AsyncReadOnlyModelViewSet.alist(self, request, *args, **kwargs)
 
 
-class QuestionaryAnswerReadOnlyViewSet(Owned, ReadOnlyModelViewSet, SchemaMixin):
+class QuestionaryAnswerReadOnlyViewSet(Owned, AsyncReadOnlyModelViewSet):
     queryset = QuestionaryAnswer.objects.all()
     serializer_class = QuestionaryAnswerSerializer
     permission_classes = (IsUser,)
     descriptions = {'list': 'API view to retrieve a list of all possible answers for questionary questions.'}
 
 
-class QuestionaryResponseViewSet(Owned, CachedModelViewSet, SchemaMixin):
+class QuestionaryResponseViewSet(Owned, AsyncModelViewSet):
     queryset = QuestionaryResponse.objects.all()
     permission_classes = (IsResponsePublic,)
     serializer_class = QuestionaryResponseSerializer
@@ -85,4 +84,4 @@ class QuestionaryResponseViewSet(Owned, CachedModelViewSet, SchemaMixin):
 
     async def acreate(self, request, *args, **kwargs):
         request.data['client'] = str(request.user.id)
-        return await CachedModelViewSet.acreate(self, request, *args, **kwargs)
+        return await AsyncModelViewSet.acreate(self, request, *args, **kwargs)

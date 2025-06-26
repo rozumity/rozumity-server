@@ -3,10 +3,8 @@ from asgiref.sync import sync_to_async
 from adrf import mixins
 from adrf.viewsets import GenericViewSet
 from django.core.cache import cache
-from rest_framework import status, viewsets
+from rest_framework import status
 from rest_framework.response import Response
-
-from rozumity.mixins.filtering_mixins import Owned
 
 
 async def generate_cache_key(view):
@@ -27,6 +25,26 @@ async def get_data(serializer):
     except Exception:
         data = await sync_to_async(getattr)(serializer, 'data')
     return data
+
+
+class Owned:
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            model = self.serializer_class.Meta.model
+            if hasattr(model, 'client'):
+                return model.objects.filter(client__user=self.request.user)
+            elif hasattr(model, 'expert'):
+                return model.objects.filter(expert__user=self.request.user)
+            return model.objects.all()
+        return None
+    
+    async def aget_object(self):
+        obj = await super().aget_object()
+        for permission in self.get_permissions():
+            if hasattr(permission, "has_object_permission"):
+                if not permission.has_object_permission(self.request, self, obj):
+                    self.permission_denied(self.request)
+        return obj
 
 
 class ListModelMixin(mixins.ListModelMixin):
@@ -124,6 +142,7 @@ class CachedModelViewSet(
     """
     pass
 
+# API VIEW MIXINS #
 
 class CacheMixinBase:
     async def _generate_cache_key(self):
