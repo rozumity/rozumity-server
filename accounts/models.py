@@ -3,9 +3,9 @@ from datetime import date, timedelta, timezone
 
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import SynchronousOnlyOperation
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-#from django.contrib.postgres.fields import ArrayField
 
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
@@ -15,7 +15,6 @@ from rozumity.utils import rel
 from accounts.managers import EmailUserManager
 
 
-# TODO: db_index
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, unique=True, editable=False, db_index=True
@@ -64,7 +63,10 @@ class AbstractProfile(models.Model):
         abstract = True
 
     def __str__(self):
-        return str(self.user.email)
+        try:
+            return self.user.email
+        except SynchronousOnlyOperation:
+            return str(self.pk)
 
     @property
     def id(self):
@@ -110,11 +112,9 @@ class ClientProfile(AbstractProfile):
         default_related_name = "clientprofile"
     
     @property
-    async def expert_email(self):
-        contract = await rel(self, "contract")
-        contract = await contract.aget()
-        if contract:
-            return contract.expert_id
+    async def experts(self):
+        contracts = await rel(self, "contracts")
+        return [await rel(c, 'expert') async for c in contracts.all()]
 
 
 class ExpertProfile(AbstractProfile):
@@ -131,10 +131,9 @@ class ExpertProfile(AbstractProfile):
         default_related_name = "expertprofile"
     
     @property
-    async def client_email(self):
-        contract = await rel(self, "contract")
-        contract = await contract.aget()
-        return getattr(await rel(contract, "client"), "email")
+    async def clients(self):
+        contracts = await rel(self, "contracts")
+        return [await rel(c, 'client') async for c in contracts.all()]
 
 
 class StaffProfile(AbstractProfile):
@@ -182,11 +181,11 @@ class TherapyContract(models.Model):
 
     client = models.ForeignKey(
         ClientProfile, on_delete=models.PROTECT,
-        null=True, blank=True, related_name="contract"
+        null=True, blank=True, related_name="contracts"
     )
     expert = models.ForeignKey(
         ExpertProfile, on_delete=models.PROTECT,
-        null=True, blank=True, related_name="contract"
+        null=True, blank=True, related_name="contracts"
     )
     client_plan = models.ForeignKey(
         SubscriptionPlan, on_delete=models.PROTECT,
