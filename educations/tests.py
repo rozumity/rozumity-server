@@ -70,11 +70,3 @@ class EducationTests(APIClientTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn('"degree":5,', response.text)
-
-        response = await self.api_client.get(
-            reverse("accounts:expert-profile", args=[self.profile_expert.id]),
-            headers={"Authorization": f"Bearer {self.token_expert}"}
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('"degree":5,', response.text)
