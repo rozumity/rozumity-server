@@ -1,10 +1,9 @@
-import asyncio
 from asgiref.sync import sync_to_async
 from django_countries.serializers import CountryFieldMixin
+from django.core.exceptions import SynchronousOnlyOperation
 from collections import OrderedDict
 from asgiref.sync import sync_to_async
 from django.db.models import Model
-from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
@@ -46,10 +45,10 @@ class AsyncSerializerMixin:
         (is_empty_value, data) = self.validate_empty_values(data)
         if is_empty_value:
             return data
-        value = self.to_internal_value(data)
+        value = await sync_to_async(self.to_internal_value)(data)
         try:
             self.run_validators(value)
-            value = await self.avalidate(value)
+            value = await sync_to_async(self.validate)(value)
             assert value is not None, ".validate() should return the validated data"
         except (ValidationError, DjangoValidationError) as exc:
             raise ValidationError(detail=drf_serializers.as_serializer_error(exc))
@@ -58,27 +57,20 @@ class AsyncSerializerMixin:
     async def ato_representation(self, instance):
         ret = OrderedDict()
         fields = self._readable_fields
-
         for field in fields:
             try:
                 attribute = await sync_to_async(field.get_attribute)(instance)
             except SkipField:
                 continue
-
             check_for_none = (
                 attribute.pk if isinstance(attribute, Model) else attribute
             )
             if check_for_none is None:
                 ret[field.field_name] = None
             else:
-                if asyncio.iscoroutinefunction(
-                    getattr(field, "ato_representation", None)
-                ):
+                try:
                     repr = await field.ato_representation(attribute)
-                else:
-                    # Use sync_to_async to make synchronous operations async-safe
+                except (SynchronousOnlyOperation, AttributeError):
                     repr = await sync_to_async(field.to_representation)(attribute)
-
                 ret[field.field_name] = repr
-
         return ret
