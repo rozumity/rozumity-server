@@ -1,7 +1,7 @@
 import uuid
 
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, SynchronousOnlyOperation
 from django.db import models
 
 from django_ckeditor_5.fields import CKEditor5Field as RichTextField
@@ -210,7 +210,10 @@ class QuestionaryResponse(models.Model):
         indexes = (models.Index(fields=['client', 'questionary']),)
 
     def __str__(self):
-        return f"{self.client.user.email} - {self.questionary.title}"
+        try:
+            return f"{self.client.user.email} - {self.questionary.title}"
+        except SynchronousOnlyOperation:
+            return str(self.id)
 
     @property
     async def ais_empty(self):
