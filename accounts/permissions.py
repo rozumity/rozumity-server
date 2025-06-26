@@ -49,9 +49,6 @@ class HasDiaryPermission(permissions.BasePermission):
                 break
         return has_diary_perm
 
-#        profile = await get_profile(request)
-#        async for contract in profile.contract.all():
-#            if (await contract.is_active and await contract.has_ai):
 
 class HasAIPermission(permissions.BasePermission):
     async def has_permission(self, request, view):
