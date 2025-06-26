@@ -85,7 +85,15 @@ class QuestionaryResponseViewSet(Owned, AsyncModelViewSet):
     @extend_schema(parameters=[
         OpenApiParameter(
             name='questionary', type=OpenApiTypes.INT, location=OpenApiParameter.QUERY,
-            description='Filter by questionaries',  style='form', explode=True,
+            description='Filter by questionaries',  style='form', explode=True
+        ),
+        OpenApiParameter(
+            name='is_filled', type=OpenApiTypes.BOOL, location=OpenApiParameter.QUERY,
+            description='Filter filled responses',  style='form'
+        ),
+        OpenApiParameter(
+            name='is_checked', type=OpenApiTypes.BOOL, location=OpenApiParameter.QUERY,
+            description='Filter checked responses with results',  style='form'
         ),
     ])
     async def alist(self, request, *args, **kwargs):
@@ -98,6 +106,12 @@ class QuestionaryResponseViewSet(Owned, AsyncModelViewSet):
     def get_queryset(self):
         qs = self.queryset
         questionary_id = self.request.query_params.get("questionary")
+        is_filled = self.request.query_params.get("is_filled", None)
+        is_checked = self.request.query_params.get("is_checked", None)
         if questionary_id:
-            qs = qs.filter(questionary_id=questionary_id)
+            qs = qs.filter(questionary_id=int(questionary_id))
+        if is_filled is not None:
+            qs = qs.filter(is_filled=is_filled == 'true')
+        if is_checked is not None:
+            qs = qs.filter(is_checked=is_checked == 'true')
         return qs.distinct()

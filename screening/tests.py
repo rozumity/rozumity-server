@@ -206,3 +206,19 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
         ), "json")()
         self.assertEqual(response['scores'][0]['id'], self.score1.id)
         self.assertEqual(response['scores_extra'][0]['id'], self.score_extra.id)
+        
+        response = getattr(await self.api(
+            "get", reverse(
+                "screening:questionaries-responses"
+            ), {"is_filled": True, "is_checked": True}, token=self.token_client
+        ), "json")()
+        self.assertEqual(len(response['results']), 1)
+        self.assertEqual(response['results'][0]['is_checked'], True)
+        self.assertEqual(response['results'][0]['is_filled'], True)
+
+        response = getattr(await self.api(
+            "get", reverse(
+                "screening:questionaries-responses"
+            ), {"is_filled": False, "is_checked": False}, token=self.token_client
+        ), "json")()
+        self.assertFalse(len(response['results']))
