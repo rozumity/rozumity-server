@@ -92,7 +92,7 @@ class RetrieveModelMixin(mixins.RetrieveModelMixin):
 class CreateModelMixin(mixins.CreateModelMixin):
     async def acreate(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        await sync_to_async(serializer.is_valid)(raise_exception=True)
+        await serializer.ais_valid(raise_exception=True)
         await self.perform_acreate(serializer)
         data = await get_data(serializer)
         headers = self.get_success_headers(data)
@@ -214,9 +214,7 @@ class RetrieveMixin(CacheMixinBase):
             return Response(await cache.aget(cache_key))
         else:
             serializer = self.get_serializer()
-            response = Response(await sync_to_async(
-                serializer.to_representation
-            )(await self.aget_object()))
+            response = Response(await serializer.ato_representation)(await self.aget_object())
             await cache.aset(cache_key, response.data)
             return response
 
@@ -226,7 +224,7 @@ class UpdateMixin(CacheMixinBase):
         partial = kwargs.pop("partial", False)
         instance = await self.aget_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        await sync_to_async(serializer.is_valid)(raise_exception=True)
+        await serializer.ais_valid(raise_exception=True)
         await serializer.asave()
         if getattr(instance, "_prefetched_objects_cache", None):
             instance._prefetched_objects_cache = {}
