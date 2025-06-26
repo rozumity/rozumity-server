@@ -43,11 +43,11 @@ class EducationViewSet(Owned, AsyncModelViewSet):
     queryset = Education.objects.select_related(
         "university", "speciality"
     ).all()
-    serializer_class = EducationReadOnlySerializer
+    serializer_class = EducationSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsExpert,)
 
     def get_serializer_class(self):
-        if self.request.method.lower() != 'get':
-            return EducationSerializer
-        return EducationReadOnlySerializer
+        if self.request.method.lower() == 'get':
+            return EducationReadOnlySerializer
+        return EducationSerializer
