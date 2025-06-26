@@ -41,3 +41,7 @@ class EducationReadOnlySerializer(ReadOnlySerializerMixin, EducationSerializer):
     university = UniversitySerializer()
     speciality = SpecialitySerializer()
     degree_display = CharField(source='get_degree_display', read_only=True)
+
+    class Meta:
+        model = Education
+        fields = '__all__'
