@@ -82,6 +82,22 @@ class QuestionaryResponseViewSet(Owned, AsyncModelViewSet):
         'partial_update': 'API view to partial update a single questionary response by its ID.\nUses ownership access.'
     }
 
+    @extend_schema(parameters=[
+        OpenApiParameter(
+            name='questionary', type=OpenApiTypes.INT, location=OpenApiParameter.QUERY,
+            description='Filter by questionaries',  style='form', explode=True,
+        ),
+    ])
+    async def alist(self, request, *args, **kwargs):
+        return await AsyncModelViewSet.alist(self, request, *args, **kwargs)
+
     async def acreate(self, request, *args, **kwargs):
         request.data['client'] = str(request.user.id)
         return await AsyncModelViewSet.acreate(self, request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = self.queryset
+        questionary_id = self.request.query_params.get("questionary")
+        if questionary_id:
+            qs = qs.filter(questionary_id=questionary_id)
+        return qs.distinct()
