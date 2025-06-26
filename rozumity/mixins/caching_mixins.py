@@ -3,6 +3,7 @@ from asgiref.sync import sync_to_async
 from adrf import mixins
 from adrf.viewsets import GenericViewSet
 from django.core.cache import cache
+from django.core.exceptions import SynchronousOnlyOperation
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -52,8 +53,12 @@ class ListModelMixin(mixins.ListModelMixin):
         cache_key_page = await generate_request_cache_key(request, isinstance(self, Owned))
         cache_key = await generate_cache_key(self)
         if not await cache.ahas_key(cache_key_page):
-            queryset = self.filter_queryset(self.get_queryset())
-            page = await self.apaginate_queryset(queryset)
+            try:
+                queryset = self.filter_queryset(await self.get_queryset())
+                page = await self.apaginate_queryset(queryset)
+            except (SynchronousOnlyOperation, RuntimeError):
+                queryset = self.filter_queryset(await self.get_queryset())
+                page = await sync_to_async(self.paginate_queryset)(queryset)
             serializer = self.get_serializer(queryset if page is None else page, many=True)
             id_name = getattr(serializer.__class__, "custom_id", "id")
             data = await get_data(serializer)
