@@ -1,18 +1,11 @@
-from adrf.generics import (
-    ListAPIView, RetrieveUpdateAPIView,
-    RetrieveAPIView, ListCreateAPIView
-)
 from rozumity.throttling import UserRateAsyncThrottle
 
 from rozumity.mixins.caching_mixins import (
-    ReadUpdateMixin, ListModelMixin, 
-    RetrieveMixin, ListCreateMixin,
     ReadOnlyModelViewSet, CachedModelViewSet
 )
 from rozumity.mixins.filtering_mixins import Owned
 
 from accounts.permissions import IsExpert
-from educations.permissions import IsEducationOwner
 
 from educations.models import *
 from educations.serializers import *
@@ -51,9 +44,11 @@ class EducationViewSet(Owned, CachedModelViewSet):
     queryset = Education.objects.select_related(
         "university", "speciality"
     ).all()
+    serializer_class = EducationReadOnlySerializer
     throttle_classes = (UserRateAsyncThrottle,)
+    permission_classes = (IsExpert,)
 
     def get_serializer_class(self):
-        if self.request.method.lower() == 'get':
-            return EducationReadOnlySerializer
-        return EducationSerializer
+        if self.request.method.lower() != 'get':
+            return EducationSerializer
+        return EducationReadOnlySerializer
