@@ -113,7 +113,7 @@ class ScreeningClientTests(APIClientTestMixin, TestCase):
             "get", reverse("screening:questionaries-response", args=[self.response.pk]),
             {}, self.token_expert
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     async def test_get_questionary(self):
         response = await self.api(
