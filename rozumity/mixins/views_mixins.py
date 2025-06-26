@@ -46,10 +46,10 @@ class AsyncModelViewSet(
                 method = getattr(cls, method_name)
                 if not getattr(method, '__spectacular__', False):
                     setattr(cls, method_name, decorator(method))
-
-        self.serializer_class.ato_representation = AsyncSerializerMixin.ato_representation
-        self.serializer_class.arun_validation = AsyncSerializerMixin.arun_validation
-        self.serializer_class.ais_valid = AsyncSerializerMixin.ais_valid
+        if self.serializer_class:
+            self.serializer_class.ato_representation = AsyncSerializerMixin.ato_representation
+            self.serializer_class.arun_validation = AsyncSerializerMixin.arun_validation
+            self.serializer_class.ais_valid = AsyncSerializerMixin.ais_valid
         return self
 
 
@@ -58,5 +58,7 @@ class AsyncReadOnlyModelViewSet(
     RetrieveModelMixin,
     GenericViewSet
 ):
+    authentication_classes = [JWTAuthentication]
+
     def __new__(cls, *args, **kwargs):
         return AsyncModelViewSet.__new__(cls, *args, **kwargs)
