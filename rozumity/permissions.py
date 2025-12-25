@@ -1,7 +1,13 @@
-
+from asgiref.sync import sync_to_async
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import BasePermission, IsAdminUser, IsAuthenticated
 from django.db.models import ForeignKey
 from rozumity.utils import rel
+
+
+class AsyncJWTAuthentication(JWTAuthentication):
+    async def authenticate(self, request):
+        return await sync_to_async(getattr(JWTAuthentication, "authenticate"))(self, request)
 
 
 class IsAdmin(IsAdminUser):

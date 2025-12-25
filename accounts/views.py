@@ -22,6 +22,7 @@ class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
+    authentication_classes = (AsyncJWTAuthentication,)
 
 
 class ClientProfileViewSet(Owned, AsyncModelViewSet):
@@ -33,6 +34,7 @@ class ClientProfileViewSet(Owned, AsyncModelViewSet):
     serializer_class = ClientProfileSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsProfileOwnerWriteAuthRead,)
+    authentication_classes = (AsyncJWTAuthentication,)
 
 
 class ExpertProfileViewSet(Owned, AsyncModelViewSet):
@@ -41,9 +43,10 @@ class ExpertProfileViewSet(Owned, AsyncModelViewSet):
     Only accessible to the profile owner for updates, and to authenticated users for read access.
     """
     queryset = ExpertProfile.objects.prefetch_related("education").all()
+    serializer_class = ExpertProfileReadOnlySerializer
     permission_classes = (IsProfileOwnerWriteAuthRead,)
     throttle_classes = (UserRateAsyncThrottle,)
-    serializer_class = ExpertProfileReadOnlySerializer
+    authentication_classes = (AsyncJWTAuthentication,)
     
     def get_serializer_class(self):
         if self.request.method.lower() != 'get':
@@ -61,6 +64,7 @@ class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     serializer_class = SubscriptionPlanSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsUser,)
+    authentication_classes = (AsyncJWTAuthentication,)
 
 
 class TherapyContractViewSet(Owned, AsyncModelViewSet):
@@ -75,3 +79,4 @@ class TherapyContractViewSet(Owned, AsyncModelViewSet):
     serializer_class = TherapyContractSerializer
     throttle_classes = (UserRateAsyncThrottle,)
     permission_classes = (IsUser,)
+    authentication_classes = (AsyncJWTAuthentication,)
