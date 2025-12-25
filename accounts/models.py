@@ -49,7 +49,7 @@ class AbstractProfile(models.Model):
         HIDE = 5, _("Prefer not to say")
 
     user = models.OneToOneField(
-        User, on_delete=models.RESTRICT, primary_key=True, editable=False
+        User, on_delete=models.CASCADE, primary_key=True, editable=False
     )
     first_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
