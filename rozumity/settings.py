@@ -222,9 +222,8 @@ DAISY_SETTINGS = {
         },
         'accounts': {
             'icon': 'fa-solid fa-person-military-pointing',
-            'name': 'Authorization',
-            'hide': False,
-            'divider_title': "Administration"
+            'name': 'Administration',
+            'hide': False
         },
         'educations': {
             'name': 'Education',
