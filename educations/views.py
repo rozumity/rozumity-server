@@ -1,4 +1,4 @@
-from rozumity.throttling import UserRateAsyncThrottle
+from rozumity.throttling import ThrottleRateLogged
 
 from rozumity.mixins.caching_mixins import (
     CachedModelViewSet, CachedModelReadOnlyViewSet
@@ -18,7 +18,7 @@ class UniversityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
-    throttle_classes = (UserRateAsyncThrottle,)
+    throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
 
 
@@ -30,7 +30,7 @@ class SpecialityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
-    throttle_classes = (UserRateAsyncThrottle,)
+    throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
 
 
@@ -44,7 +44,7 @@ class EducationViewSet(CachedModelViewSet):
         "university", "speciality"
     ).all()
     serializer_class = EducationSerializer
-    throttle_classes = (UserRateAsyncThrottle,)
+    throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
 
     def get_serializer_class(self):
