@@ -1,7 +1,7 @@
 from rozumity.throttling import UserRateAsyncThrottle
 
-from rozumity.mixins.views_mixins import (
-    AsyncModelViewSet, AsyncReadOnlyModelViewSet, Owned
+from rozumity.mixins.caching_mixins import (
+    CachedModelViewSet, CachedModelReadOnlyViewSet, Owned
 )
 
 from rozumity.permissions import *
@@ -12,7 +12,7 @@ from .models import *
 from .serializers import *
 
 
-class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class UserReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     API view to retrieve a list of all users.
     Only accessible to admin users.
@@ -24,7 +24,7 @@ class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     permission_classes = (IsAdmin,)
 
 
-class ClientProfileViewSet(Owned, AsyncModelViewSet):
+class ClientProfileViewSet(Owned, CachedModelViewSet):
     """
     API view to retrieve or update a client profile.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
@@ -35,7 +35,7 @@ class ClientProfileViewSet(Owned, AsyncModelViewSet):
     permission_classes = (IsProfileOwnerWriteAuthRead,)
 
 
-class ExpertProfileViewSet(Owned, AsyncModelViewSet):
+class ExpertProfileViewSet(Owned, CachedModelViewSet):
     """
     API view to retrieve or update an expert profile.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
@@ -51,7 +51,7 @@ class ExpertProfileViewSet(Owned, AsyncModelViewSet):
         return ExpertProfileReadOnlySerializer
 
 
-class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class SubscriptionPlanReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     API view to retrieve a list of all subscription plans or 
     to retrieve a single subscription plan by its ID.
@@ -63,7 +63,7 @@ class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     permission_classes = (IsUser,)
 
 
-class TherapyContractViewSet(Owned, AsyncModelViewSet):
+class TherapyContractViewSet(Owned, CachedModelViewSet):
     """
     API view to create a new therapy contract or
     to retrieve & update a therapy contract by its ID.

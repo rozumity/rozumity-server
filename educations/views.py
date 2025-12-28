@@ -1,7 +1,7 @@
 from rozumity.throttling import UserRateAsyncThrottle
 
-from rozumity.mixins.views_mixins import (
-    AsyncModelViewSet, AsyncReadOnlyModelViewSet, Owned
+from rozumity.mixins.caching_mixins import (
+    CachedModelViewSet, CachedModelReadOnlyViewSet
 )
 
 from accounts.permissions import IsExpert
@@ -10,7 +10,7 @@ from educations.models import *
 from educations.serializers import *
 
 
-class UniversityReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class UniversityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     API view to retrieve a list of all universities.
     API view to retrieve a single university by its ID.
@@ -22,7 +22,7 @@ class UniversityReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     permission_classes = (IsExpert,)
 
 
-class SpecialityReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class SpecialityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     API view to retrieve a list of all specialities.
     API view to retrieve a single speciality by its ID.
@@ -34,7 +34,7 @@ class SpecialityReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     permission_classes = (IsExpert,)
 
 
-class EducationViewSet(Owned, AsyncModelViewSet):
+class EducationViewSet(CachedModelViewSet):
     """
     API view to retrieve a list of all educations or create one.
     API view to retrieve or update a single education by its ID.
