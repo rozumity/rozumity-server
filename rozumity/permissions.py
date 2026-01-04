@@ -20,6 +20,20 @@ class IsUser(IsAuthenticated):
         return bool(request.user and request.user.is_authenticated)
 
 
+class IsOwner(BasePermission):
+    async def has_object_permission(self, request, view, obj):
+        user = request.user
+        if not user.is_authenticated:
+            return False
+        if hasattr(obj, 'client') and obj.client.user_id == user.id:
+            return True
+        if hasattr(obj, 'expert') and obj.expert.user_id == user.id:
+            return True
+        if hasattr(obj, 'user_id') and obj.user_id == user.id:
+            return True
+        return False
+
+
 class AsyncOrPermission(BasePermission):
     """
     DRF Or adrf.

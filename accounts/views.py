@@ -1,7 +1,8 @@
 from rozumity.throttling import UserRateAsyncThrottle
 
-from rozumity.mixins.views_mixins import (
-    AsyncModelViewSet, AsyncReadOnlyModelViewSet, Owned
+from rozumity.mixins.caching_mixins import (
+    RetrieveModelMixin, UpdateModelMixin, GenericViewSet,
+    CachedModelReadOnlyViewSet, CachedModelViewSet,
 )
 
 from rozumity.permissions import *
@@ -12,12 +13,9 @@ from .models import *
 from .serializers import *
 
 
-class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class UserReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
-    API view to retrieve a list of all users.
-    Only accessible to admin users.
-    API view to retrieve a single user by their ID.
-    Only accessible to admin users.
+    Retrieve users. Only accessible to admin users.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -25,9 +23,11 @@ class UserReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     authentication_classes = (AsyncJWTAuthentication,)
 
 
-class ClientProfileViewSet(Owned, AsyncModelViewSet):
+class ClientProfileViewSet(
+    UpdateModelMixin, RetrieveModelMixin, GenericViewSet
+):
     """
-    API view to retrieve or update a client profile.
+    Retrieve or update a client profile by user ID.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
     """
     queryset = ClientProfile.objects.all()
@@ -37,7 +37,7 @@ class ClientProfileViewSet(Owned, AsyncModelViewSet):
     authentication_classes = (AsyncJWTAuthentication,)
 
 
-class ExpertProfileViewSet(Owned, AsyncModelViewSet):
+class ExpertProfileViewSet(CachedModelViewSet):
     """
     API view to retrieve or update an expert profile.
     Only accessible to the profile owner for updates, and to authenticated users for read access.
@@ -54,7 +54,7 @@ class ExpertProfileViewSet(Owned, AsyncModelViewSet):
         return ExpertProfileReadOnlySerializer
 
 
-class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
+class SubscriptionPlanReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     API view to retrieve a list of all subscription plans or 
     to retrieve a single subscription plan by its ID.
@@ -67,7 +67,7 @@ class SubscriptionPlanReadOnlyViewSet(AsyncReadOnlyModelViewSet):
     authentication_classes = (AsyncJWTAuthentication,)
 
 
-class TherapyContractViewSet(Owned, AsyncModelViewSet):
+class TherapyContractViewSet(CachedModelViewSet):
     """
     API view to create a new therapy contract or
     to retrieve & update a therapy contract by its ID.
