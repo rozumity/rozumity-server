@@ -15,10 +15,7 @@ class CustomUserAdmin(UserAdmin):
         refresh = RefreshToken.for_user(obj)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
-        return (  
-            f"Access: \n{''.join(access_token[i:i+100] for i in range(0, len(access_token), 100))}\n\n"
-            f"Refresh: \n{''.join(refresh_token[i:i+100] for i in range(0, len(refresh_token), 100))}"
-        )
+        return (f"Access: \n{access_token}\n\n" f"Refresh: \n{refresh_token}")
 
     jwt_tokens.short_description = "JWT Tokens"
 

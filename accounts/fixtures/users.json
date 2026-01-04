@@ -1,0 +1,148 @@
+[
+  {
+    "model": "accounts.user",
+    "pk": "50fadb15-69ff-4899-befe-9308ebcd442c",
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$DozM0JxUCcWRY36VYjvqv3$u99gzB2KnbImsY/+Qg8IJfueyPf1fRfQi4CAG8cJtec=",
+      "last_login": null,
+      "is_superuser": false,
+      "email": "expert@test.test",
+      "is_client": false,
+      "is_expert": true,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-14T16:12:06Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "6296e89f-8a9a-436c-9bcb-9dc544c9c398",
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$JQWGZyRnfJZo84YiieGujb$5v2nJ0v6276v8PhzfJ4qtG6yEaOTiiYdaIX7H4HcusM=",
+      "last_login": null,
+      "is_superuser": false,
+      "email": "expert2@test.test",
+      "is_client": false,
+      "is_expert": true,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-14T16:15:04Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "857f2397-8400-4834-a007-5975e748b2af",
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$M79VFlRrEXHI3gyWJzQ1vD$K+hkl62Wlac7jLygs73U0A9DNmFvo1ysfobosKJiIns=",
+      "last_login": "2025-06-14T16:07:04.117Z",
+      "is_superuser": true,
+      "email": "test@test.test",
+      "is_client": false,
+      "is_expert": false,
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2025-06-14T14:11:22.770Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "c31b820b-9d59-45d9-922f-eaca8f9bcc9a",
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$W9Mia2VlHaBxxzgcXekjC9$O+6rr+acGZm9SaW7CeYO3dx4VF071i3PecT+K4rdXxU=",
+      "last_login": null,
+      "is_superuser": false,
+      "email": "client2@test.test",
+      "is_client": true,
+      "is_expert": false,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-14T16:14:30Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "ee4847b0-77b5-48ac-9d17-ee224f35f40a",
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$CppUaz3ynsVjQ2gdwMpkFb$zaCY8z9+o2vsG9yQ6lLmaprpQyOHm62CqDy6Mmlqm2Y=",
+      "last_login": null,
+      "is_superuser": false,
+      "email": "client@test.test",
+      "is_client": true,
+      "is_expert": false,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-14T16:11:36Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.clientprofile",
+    "pk": "c31b820b-9d59-45d9-922f-eaca8f9bcc9a",
+    "fields": {
+      "first_name": "",
+      "last_name": "",
+      "gender": 5,
+      "country": "",
+      "date_birth": "2007-06-19"
+    }
+  },
+  {
+    "model": "accounts.clientprofile",
+    "pk": "ee4847b0-77b5-48ac-9d17-ee224f35f40a",
+    "fields": {
+      "first_name": "",
+      "last_name": "",
+      "gender": 5,
+      "country": "",
+      "date_birth": "2007-06-19"
+    }
+  },
+  {
+    "model": "accounts.expertprofile",
+    "pk": "50fadb15-69ff-4899-befe-9308ebcd442c",
+    "fields": {
+      "first_name": "",
+      "last_name": "",
+      "gender": 5,
+      "country": "",
+      "date_birth": "2007-06-19",
+      "education_extra": "",
+      "countries_allowed": "",
+      "education": []
+    }
+  },
+  {
+    "model": "accounts.expertprofile",
+    "pk": "6296e89f-8a9a-436c-9bcb-9dc544c9c398",
+    "fields": {
+      "first_name": "",
+      "last_name": "",
+      "gender": 5,
+      "country": "",
+      "date_birth": "2007-06-19",
+      "education_extra": "",
+      "countries_allowed": "",
+      "education": []
+    }
+  },
+  {
+    "model": "accounts.staffprofile",
+    "pk": "857f2397-8400-4834-a007-5975e748b2af",
+    "fields": {
+      "first_name": "",
+      "last_name": "",
+      "gender": 5,
+      "country": "",
+      "date_birth": "2007-06-19"
+    }
+  }
+]

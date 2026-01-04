@@ -40,30 +40,20 @@ class ClientProfileSerializer(ProfileSerializerBase):
         read_only_fields = ('date_birth', "user")
 
 
-class ExpertProfileReadOnlySerializer(
-    ReadOnlySerializerMixin, ProfileSerializerBase
-):
-    education = EducationSerializer(many=True)
-    countries_allowed = CountryField()
-
-    class Meta:
-        model = ExpertProfile
-        fields = "__all__"
-
-
 class ExpertProfileSerializer(ProfileSerializerBase):
-    education = PrimaryKeyRelatedField(
-        queryset = Education.objects.select_related(
-            'university','speciality'
-        ).all(), 
-        many=True
-    )
     countries_allowed = CountryField()
-
+    
     class Meta:
         model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('date_birth', "user")
+        read_only_fields = ('date_birth', 'user')
+
+    async def ato_representation(self, instance):
+        representation = await super().ato_representation(instance)
+        representation['education'] = await EducationSerializer(
+            instance.education.all(), many=True
+        ).adata
+        return representation
 
 
 class StaffProfileSerializer(ProfileSerializerBase):

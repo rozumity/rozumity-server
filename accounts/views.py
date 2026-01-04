@@ -1,13 +1,11 @@
-from rozumity.throttling import UserRateAsyncThrottle
+from rozumity.throttling import ThrottleRateLogged
 
 from rozumity.mixins.caching_mixins import (
     RetrieveModelMixin, UpdateModelMixin, GenericViewSet,
     CachedModelReadOnlyViewSet, CachedModelViewSet,
 )
 
-from rozumity.permissions import *
-from accounts.permissions import IsProfileOwnerWriteAuthRead
-
+from rozumity.permissions import AsyncJWTAuthentication, IsAdmin, IsUser
 
 from .models import *
 from .serializers import *
@@ -32,26 +30,23 @@ class ClientProfileViewSet(
     """
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
-    throttle_classes = (UserRateAsyncThrottle,)
-    permission_classes = (IsProfileOwnerWriteAuthRead,)
+    throttle_classes = (ThrottleRateLogged,)
     authentication_classes = (AsyncJWTAuthentication,)
 
 
 class ExpertProfileViewSet(CachedModelViewSet):
     """
-    API view to retrieve or update an expert profile.
-    Only accessible to the profile owner for updates, and to authenticated users for read access.
+    Base Base for all client profile views
     """
     queryset = ExpertProfile.objects.prefetch_related("education").all()
-    serializer_class = ExpertProfileReadOnlySerializer
-    permission_classes = (IsProfileOwnerWriteAuthRead,)
-    throttle_classes = (UserRateAsyncThrottle,)
+    serializer_class = ExpertProfileSerializer
+    throttle_classes = (ThrottleRateLogged,)
     authentication_classes = (AsyncJWTAuthentication,)
     
     def get_serializer_class(self):
         if self.request.method.lower() != 'get':
             return ExpertProfileSerializer
-        return ExpertProfileReadOnlySerializer
+        return ExpertProfileSerializer
 
 
 class SubscriptionPlanReadOnlyViewSet(CachedModelReadOnlyViewSet):
@@ -62,7 +57,7 @@ class SubscriptionPlanReadOnlyViewSet(CachedModelReadOnlyViewSet):
     """
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
-    throttle_classes = (UserRateAsyncThrottle,)
+    throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
     authentication_classes = (AsyncJWTAuthentication,)
 
@@ -77,6 +72,6 @@ class TherapyContractViewSet(CachedModelViewSet):
         "client", "expert", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
-    throttle_classes = (UserRateAsyncThrottle,)
+    throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
     authentication_classes = (AsyncJWTAuthentication,)
