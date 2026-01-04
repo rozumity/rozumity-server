@@ -198,6 +198,9 @@ SPECTACULAR_SETTINGS = {
             }
         }
     },
+    'PREPROCESSING_HOOKS': [
+        'rozumity.mixins.caching_mixins.utils.preprocess_async_actions',
+    ],
 }
 
  # DEV ONLY
