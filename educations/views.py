@@ -1,7 +1,7 @@
 from rozumity.throttling import ThrottleRateLogged
 
-from rozumity.mixins.caching_mixins import (
-    CachedModelViewSet, CachedModelReadOnlyViewSet
+from rozumity.mixins.caching_mixins.viewsets import (
+    ModelViewSetCached, ReadOnlyModelViewSetCached
 )
 
 from accounts.permissions import IsExpert
@@ -10,7 +10,7 @@ from educations.models import *
 from educations.serializers import *
 
 
-class UniversityReadOnlyViewSet(CachedModelReadOnlyViewSet):
+class UniversityReadOnlyViewSet(ReadOnlyModelViewSetCached):
     """
     Universities Read Only API.
     """
@@ -20,7 +20,7 @@ class UniversityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     permission_classes = (IsExpert,)
 
 
-class SpecialityReadOnlyViewSet(CachedModelReadOnlyViewSet):
+class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
     """
     Specialities Read Only API.
     """
@@ -30,7 +30,7 @@ class SpecialityReadOnlyViewSet(CachedModelReadOnlyViewSet):
     permission_classes = (IsExpert,)
 
 
-class EducationViewSet(CachedModelViewSet):
+class EducationViewSet(ModelViewSetCached):
     """
     Education Read and Write API.
     Only accessible to users with expert permissions.

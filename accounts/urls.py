@@ -4,12 +4,15 @@ from accounts import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path("users/", views.UserReadOnlyViewSet.as_view({"get": "alist"}), name="users"),
-    path("user/<uuid:pk>/", views.UserReadOnlyViewSet.as_view({"get": "aretrieve"}), name="user"),
-    path("profile/client/<uuid:pk>/", views.ClientProfileViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="client-profile"),
-    path("profile/expert/<uuid:pk>/", views.ExpertProfileViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="expert-profile"),
-    path("subscriptions/", views.SubscriptionPlanReadOnlyViewSet.as_view({"get": "alist"}), name="subscriptions"),
-    path("subscription/<int:pk>/", views.SubscriptionPlanReadOnlyViewSet.as_view({"get": "aretrieve"}), name="subscription"),
-    path("contracts/", views.TherapyContractViewSet.as_view({"post": "acreate"}), name="contracts"),
-    path("contract/<int:pk>/", views.TherapyContractViewSet.as_view({"get": "aretrieve", "put": "aupdate", "patch": "partial_aupdate"}), name="contract")
+    path("users/", views.UserViewSet.as_view({'get': 'alist'}), name="user-list"),
+    path("users/<uuid:pk>/", views.UserViewSet.as_view({'get': 'aretrieve'}), name="user-detail"),
+
+    path("subscription-plans/", views.SubscriptionPlanViewSet.as_view({'get': 'list'}), name="subscription-plan-list"),
+    path("subscription-plans/<uuid:pk>/", views.SubscriptionPlanViewSet.as_view({'get': 'retrieve'}), name="subscription-plan-detail"),
+
+    path("client-profiles/<uuid:pk>/", views.RetrieveUpdateClientProfileView.as_view(), name="client-profile-detail"),
+    path("expert-profiles/<uuid:pk>/", views.RetrieveUpdateExpertProfileView.as_view(), name="expert-profile-detail"),
+
+    path("therapy-contracts/", views.CreateTherapyContractView.as_view(), name="therapy-contract-create"),
+    path("therapy-contracts/<uuid:pk>/", views.RetrieveUpdateTherapyContractView.as_view(), name="therapy-contract-detail"),
 ]
