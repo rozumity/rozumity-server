@@ -2,11 +2,15 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from rozumity.throttling import ThrottleRateLogged
 
-from rozumity.mixins.caching_mixins.viewsets import ReadOnlyModelViewSetCached
-from rozumity.mixins.caching_mixins.generics import RetrieveUpdateAPIView, CreateAPIView
+from rozumity.mixins.caching_mixins.viewsets import (
+    ReadOnlyModelViewSetCached
+)
+from rozumity.mixins.caching_mixins.generics import (
+    RetrieveUpdateAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
+)
 
 from rozumity.permissions import IsAdmin, IsUser
-
+from .permissions import IsExpert
 from .models import *
 from .serializers import *
 
@@ -59,11 +63,7 @@ class RetrieveUpdateExpertProfileView(RetrieveUpdateAPIView):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
     throttle_classes = (ThrottleRateLogged,)
-    
-    def get_serializer_class(self):
-        if self.request.method.lower() != 'get':
-            return ExpertProfileSerializer
-        return ExpertProfileSerializer
+    permission_classes = (IsExpert,)
 
 
 @extend_schema_view(
@@ -119,3 +119,60 @@ class CreateTherapyContractView(CreateAPIView):
     serializer_class = TherapyContractSerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Retrieve a list of all universities",
+        description="Permissions: owner, admin"
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single university by its ID",
+        description="Permissions: owner, admin"
+    )
+)
+class UniversityReadOnlyViewSet(ReadOnlyModelViewSetCached):
+    queryset = University.objects.all()
+    serializer_class = UniversitySerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Retrieve a list of all specialities",
+        description="Permissions: owner, admin"
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single speciality by its ID",
+        description="Permissions: owner, admin"
+    )
+)
+class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
+    queryset = Speciality.objects.all()
+    serializer_class = SpecialitySerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
+
+
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary="Retrieve a single speciality by its ID",
+        description="Permissions: expert"
+    ),
+    update=extend_schema(
+        summary="Update a single speciality by its ID",
+        description="Permissions: owner, admin"
+    ),
+    destroy=extend_schema(
+        summary="Destroy a single speciality by its ID",
+        description="Permissions: owner, admin"
+    )
+)
+class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Education.objects.select_related(
+        "university", "speciality"
+    ).all()
+    serializer_class = EducationSerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)

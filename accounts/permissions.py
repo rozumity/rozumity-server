@@ -90,3 +90,14 @@ class HasDyagnosisPermission(permissions.BasePermission):
                 has_dyagnosis_perm = True
                 break
         return has_dyagnosis_perm
+
+
+class IsEducationOwner(permissions.BasePermission):
+    async def has_permission(self, request, view):
+        if request.user.is_authenticated and request.user.is_expert:
+            profile = await get_profile(request)
+            pk = view.kwargs.get('pk')
+            async for education in profile.education.all():
+                if education.id == pk:
+                    return True
+        return False

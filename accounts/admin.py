@@ -2,10 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import (
-    User, ClientProfile, ExpertProfile, StaffProfile, 
-    TherapyContract, SubscriptionPlan
-)
+from accounts.models import *
 from accounts.forms import CustomUserCreationForm
 
 
@@ -57,6 +54,21 @@ class StaffProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'first_name', 'last_name', 'country', 'gender')
     search_fields = ('user__email', 'first_name', 'last_name')
     list_filter = ('country', 'gender')
+
+
+@admin.register(Education)
+class EducationAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(University)
+class UniversityAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Speciality)
+class SpecialityAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(TherapyContract)
