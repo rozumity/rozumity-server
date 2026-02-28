@@ -4,14 +4,9 @@ from rest_framework.serializers import (
 )
 from django_countries.serializer_fields import CountryField
 
-from rozumity.mixins.serialization_mixins import (
-    CountryFieldMixin, ReadOnlySerializerMixin
-)
-
-from educations.serializers import EducationSerializer
+from rozumity.utils import CountryFieldMixin
 
 from accounts.models import *
-from educations.models import Education
 
 # --- Profile
 
@@ -61,6 +56,37 @@ class StaffProfileSerializer(ProfileSerializerBase):
         model = StaffProfile
         fields = "__all__"
         read_only_fields = ('date_birth', "user")
+
+# --- Education
+
+class SpecialitySerializer(ModelSerializer):
+    class Meta:
+        model = Speciality
+        fields = '__all__'
+
+
+class UniversitySerializer(CountryFieldMixin, ModelSerializer):
+    country = CountryField()
+
+    class Meta:
+        model = University
+        fields = '__all__'
+
+
+class EducationSerializer(ModelSerializer):
+    university = PrimaryKeyRelatedField(queryset=University.objects.all(), required=False)
+    speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all(), required=False)
+    degree_display = CharField(source='get_degree_display', read_only=True)
+
+    class Meta:
+        model = Education
+        fields = "__all__"
+
+    async def ato_representation(self, instance):
+        representation = await super().ato_representation(instance)
+        representation['university'] = await UniversitySerializer(instance.university).adata
+        return representation
+
 
 # --- Profile
 # Subscription ---

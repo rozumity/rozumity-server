@@ -1,8 +1,9 @@
 from drf_spectacular.utils import extend_schema
 from rozumity.throttling import ThrottleRateLogged
 from adrf_caching.viewsets import ReadOnlyModelViewSetCached
-from adrf_caching.generics import RetrieveUpdateAPIView, CreateAPIView
+from adrf_caching.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView
 from rozumity.permissions import IsAdmin, IsUser
+from .permissions import IsExpert
 from .models import *
 from .serializers import *
 
@@ -54,6 +55,7 @@ class RetrieveUpdateExpertProfileView(RetrieveUpdateAPIView):
     @extend_schema(summary="Partial update one expert profile by ID", description="Permissions: owner, admin")
     async def patch(self, request, *args, **kwargs):
         return await super().patch(request, *args, **kwargs)
+    permission_classes = (IsExpert,)
 
 
 class SubscriptionPlanViewSet(ReadOnlyModelViewSetCached):
@@ -103,3 +105,24 @@ class CreateTherapyContractView(CreateAPIView):
     @extend_schema(summary="Create new therapy contract", description="Permissions: auth")
     async def post(self, request, *args, **kwargs):
         return await super().post(request, *args, **kwargs)
+
+class UniversityReadOnlyViewSet(ReadOnlyModelViewSetCached):
+    queryset = University.objects.all()
+    serializer_class = UniversitySerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
+
+
+class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
+    queryset = Speciality.objects.all()
+    serializer_class = SpecialitySerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
+
+class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Education.objects.select_related(
+        "university", "speciality"
+    ).all()
+    serializer_class = EducationSerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)

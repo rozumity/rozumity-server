@@ -15,4 +15,10 @@ urlpatterns = [
 
     path("therapy-contracts/", views.CreateTherapyContractView.as_view(), name="therapy-contract-create"),
     path("therapy-contracts/<uuid:pk>/", views.RetrieveUpdateTherapyContractView.as_view(), name="therapy-contract-detail"),
+
+    path("universities/", views.UniversityReadOnlyViewSet.as_view({'get': 'alist'}), name="universities"),
+    path("university/<int:pk>/", views.UniversityReadOnlyViewSet.as_view({'get': 'aretrieve'}), name="university"),
+    path("specialities/", views.SpecialityReadOnlyViewSet.as_view({'get': 'alist'}), name="specialities"),
+    path("speciality/<int:pk>/", views.SpecialityReadOnlyViewSet.as_view({'get': 'aretrieve'}), name="speciality"),
+    path("education/<int:pk>/", views.EducationRetrieveUpdateDestroyView.as_view(), name="education"),
 ]

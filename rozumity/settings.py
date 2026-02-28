@@ -53,8 +53,7 @@ INSTALLED_APPS = [
     'djmoney',
     'django_ckeditor_5',
     'rozumity',
-    'accounts',
-    'educations'
+    'accounts'
 ]
 
 MIDDLEWARE = [
