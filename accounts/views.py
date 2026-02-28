@@ -65,12 +65,12 @@ class SubscriptionPlanViewSet(ReadOnlyModelViewSetCached):
     permission_classes = (IsUser,)
 
     @extend_schema(summary="Retrieve a list of all subscription plans", description="Permissions: auth")
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    async def list(self, request, *args, **kwargs):
+        return await super().list(request, *args, **kwargs)
 
     @extend_schema(summary="Retrieve a single subscription plan by its ID", description="Permissions: auth")
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    async def retrieve(self, request, *args, **kwargs):
+        return await super().retrieve(request, *args, **kwargs)
 
 
 class RetrieveUpdateTherapyContractView(RetrieveUpdateAPIView):

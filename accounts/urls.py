@@ -8,7 +8,7 @@ urlpatterns = [
     path("users/<uuid:pk>/", views.UserViewSet.as_view({'get': 'aretrieve'}), name="user-detail"),
 
     path("subscription-plans/", views.SubscriptionPlanViewSet.as_view({'get': 'list'}), name="subscription-plan-list"),
-    path("subscription-plans/<uuid:pk>/", views.SubscriptionPlanViewSet.as_view({'get': 'retrieve'}), name="subscription-plan-detail"),
+    path("subscription-plans/<int:pk>/", views.SubscriptionPlanViewSet.as_view({'get': 'retrieve'}), name="subscription-plan-detail"),
 
     path("client-profiles/<uuid:pk>/", views.RetrieveUpdateClientProfileView.as_view(), name="client-profile-detail"),
     path("expert-profiles/<uuid:pk>/", views.RetrieveUpdateExpertProfileView.as_view(), name="expert-profile-detail"),
