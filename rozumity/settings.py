@@ -199,7 +199,7 @@ SPECTACULAR_SETTINGS = {
         }
     },
     'PREPROCESSING_HOOKS': [
-        'rozumity.mixins.caching_mixins.utils.preprocess_async_actions',
+        'adrf_caching.utils.preprocess_async_actions',
     ],
 }
 

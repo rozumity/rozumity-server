@@ -1,6 +1,6 @@
 from rozumity.throttling import ThrottleRateLogged
 
-from rozumity.mixins.caching_mixins.viewsets import (
+from adrf_caching.viewsets import (
     ModelViewSetCached, ReadOnlyModelViewSetCached
 )
 

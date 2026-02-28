@@ -78,7 +78,7 @@ class AbstractProfile(models.Model):
     
     @property
     async def name(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.first_name} {self.last_name}'.strip()
 
     @property
     async def name_reversed(self):
@@ -90,7 +90,7 @@ class AbstractProfile(models.Model):
 
     @property
     async def is_adult(self):
-        return True if self.age > 18 else False
+        return True if await self.age > 18 else False
 
     @property
     async def gender_verbose(self):
@@ -214,7 +214,7 @@ class TherapyContract(models.Model):
 
     @property
     async def date_end_client(self):
-        if self.client_plan_duration:
+        if self.client_plan_days:
             return self.client_plan_prolong_date + timedelta(
                 days=self.client_plan_days
             )
@@ -228,7 +228,11 @@ class TherapyContract(models.Model):
 
     @property
     async def date_end(self):
-        return max(await self.date_end_client, await self.date_end_expert)
+        # Safely collect dates and find max, avoiding None comparison issues
+        d_client = await self.date_end_client
+        d_expert = await self.date_end_expert
+        dates = [d for d in [d_client, d_expert] if d is not None]
+        return max(dates) if dates else None
 
     @property
     async def is_paid(self):
@@ -293,23 +297,35 @@ class TherapyContract(models.Model):
 
     @property
     async def has_diary(self):
+        # Fetch plans asynchronously
         client_plan = await rel(self, "client_plan")
         expert_plan = await rel(self, "expert_plan")
-        return any((client_plan.has_diary, expert_plan.has_diary))
+        # Use getattr to safely access flags if plan is not None
+        return any((
+            getattr(client_plan, 'has_diary', False), 
+            getattr(expert_plan, 'has_diary', False)
+        ))
 
     @property
     async def has_ai(self):
         client_plan = await rel(self, "client_plan")
         expert_plan = await rel(self, "expert_plan")
-        return any((client_plan.has_ai, expert_plan.has_ai))
+        return any((
+            getattr(client_plan, 'has_ai', False), 
+            getattr(expert_plan, 'has_ai', False)
+        ))
 
     @property
     async def has_screening(self):
         client_plan = await rel(self, "client_plan")
         expert_plan = await rel(self, "expert_plan")
-        return any((client_plan.has_screening, expert_plan.has_screening))
+        return any((
+            getattr(client_plan, 'has_screening', False), 
+            getattr(expert_plan, 'has_screening', False)
+        ))
 
     @property
     async def has_dyagnosis(self):
+        # Only expert plan provides diagnosis feature
         expert_plan = await rel(self, "expert_plan")
-        return expert_plan.has_dyagnosis
+        return getattr(expert_plan, 'has_dyagnosis', False) if expert_plan else False
