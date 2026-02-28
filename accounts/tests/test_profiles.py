@@ -1,17 +1,12 @@
 import pytest
-import uuid
 from datetime import date, timedelta
-from django.core.exceptions import SynchronousOnlyOperation
 from django.db import IntegrityError
-from accounts.models import User, AbstractProfile
-from rozumity.factories.accounts import UserFactory, ClientProfileFactory, ExpertProfileFactory, TherapyContractFactory
+from rozumity.factories.accounts import UserFactory
 from django.urls import reverse
 from rest_framework import status
 
-
-import pytest
-from django.db import IntegrityError
 from accounts.models import User, ClientProfile, ExpertProfile, StaffProfile
+
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio

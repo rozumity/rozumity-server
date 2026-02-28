@@ -1,7 +1,10 @@
 import pytest
 from decimal import Decimal
 from accounts.models import SubscriptionPlan
-from rozumity.factories.accounts import SubscriptionPlanFactory
+from rozumity.factories.accounts import SubscriptionPlanFactory, UserFactory
+from django.urls import reverse
+from rest_framework import status
+
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
@@ -139,3 +142,102 @@ class TestSubscriptionPlanFull:
         
         assert len(plan.title) == 64
         assert len(plan.description) == 500
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+class TestSubscriptionPlanAPI:
+    """
+    In-depth testing for SubscriptionPlan Read-Only views.
+    Verifies permissions, data structure, and HTTP method restrictions.
+    """
+
+    async def test_list_plans_authenticated(self, adrf_client):
+        """
+        Verify that an authenticated user can list all plans.
+        Path: /subscription-plans/ -> name='subscription-plan-list'
+        """
+        await SubscriptionPlanFactory.acreate(title="Plan A", owner_type=0)
+        await SubscriptionPlanFactory.acreate(title="Plan B", owner_type=1)
+
+        user = await UserFactory.acreate()
+        url = reverse('accounts:subscription-plan-list')
+
+        adrf_client.force_authenticate(user=user)
+        response = await adrf_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        assert "results" in response.data
+        assert isinstance(response.data['results'], list)
+        assert len(response.data['results']) >= 2
+
+    async def test_retrieve_plan_detail_data(self, adrf_client):
+        """
+        Verify the detailed fields of a single plan.
+        """
+        plan = await SubscriptionPlanFactory.acreate(
+            title="Premium Support",
+            price=150.00,
+            has_ai=True,
+            owner_type=SubscriptionPlan.OwnerTypes.BOTH
+        )
+        user = await UserFactory.acreate()
+        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+
+        adrf_client.force_authenticate(user=user)
+        response = await adrf_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['title'] == "Premium Support"
+        assert response.data['has_ai'] is True
+        assert "150.00" in str(response.data['price'])
+
+        assert response.data['owner_type'] == SubscriptionPlan.OwnerTypes.BOTH.label
+
+    async def test_read_only_methods_enforcement(self, adrf_client):
+        """
+        Verify that POST, PUT, DELETE are forbidden for this ViewSet.
+        """
+        plan = await SubscriptionPlanFactory.acreate()
+        user = await UserFactory.acreate(is_staff=True)
+        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        
+        adrf_client.force_authenticate(user=user)
+        
+        list_url = reverse('accounts:subscription-plan-list')
+        response_post = await adrf_client.post(list_url, data={"title": "New"})
+        assert response_post.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+        
+        response_delete = await adrf_client.delete(url)
+        assert response_delete.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    async def test_owner_type_filtering_logic(self, adrf_client):
+        """
+        Check if the owner_type choices are correctly represented as labels.
+        """
+        plan = await SubscriptionPlanFactory.acreate(owner_type=SubscriptionPlan.OwnerTypes.EXPERT)
+        user = await UserFactory.acreate()
+        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+
+        adrf_client.force_authenticate(user=user)
+        response = await adrf_client.get(url)
+
+        assert response.data['owner_type'] == SubscriptionPlan.OwnerTypes.EXPERT.label
+
+    async def test_caching_validity(self, adrf_client):
+        """
+        Verify that caching returns data consistently.
+        """
+        plan = await SubscriptionPlanFactory.acreate(title="CacheTest")
+        user = await UserFactory.acreate()
+        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        
+        adrf_client.force_authenticate(user=user)
+        
+        res1 = await adrf_client.get(url)
+        res2 = await adrf_client.get(url)
+        
+        assert res1.status_code == 200
+        assert res2.status_code == 200
+        assert res1.data['title'] == res2.data['title']
