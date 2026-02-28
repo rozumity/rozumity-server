@@ -5,6 +5,8 @@ from django.core.exceptions import SynchronousOnlyOperation
 from django.db import IntegrityError
 from accounts.models import User, AbstractProfile
 from rozumity.factories.accounts import UserFactory, ClientProfileFactory, ExpertProfileFactory, TherapyContractFactory
+from django.urls import reverse
+from rest_framework import status
 
 
 import pytest
@@ -142,3 +144,139 @@ class TestProfileCalculationsDetailed:
         await staff.asave()
         
         assert await staff.is_adult is True
+
+
+import pytest
+from django.urls import reverse
+from rest_framework import status
+from accounts.models import ClientProfile, ExpertProfile
+from rozumity.factories.accounts import UserFactory, SubscriptionPlanFactory
+# Предполагаем наличие фабрики для образования
+# from rozumity.factories.educations import EducationFactory 
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+class TestProfileAPIDetailed:
+    """
+    In-depth testing for Profile views including field validation, 
+    many-to-many relationships, and complex permissions.
+    """
+
+    # --- CLIENT PROFILE DEEP TESTS ---
+
+#    async def test_client_cannot_update_another_client(self, adrf_client):
+#       """
+#        SECURITY: Verify a client cannot PATCH someone else's profile.
+#        """
+#        victim = await UserFactory.acreate(is_client=True)
+#        attacker = await UserFactory.acreate(is_client=True)
+#        url = reverse('accounts:client-profile-detail', kwargs={'pk': victim.pk})
+#        
+#        adrf_client.force_authenticate(user=attacker)
+#        response = await adrf_client.patch(url, data={"first_name": "Hacked"})
+#        
+#        # Ожидаем 403 Forbidden или 404 в зависимости от твоей логики GetObject
+#        assert response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+#        
+#        # Проверяем, что данные не изменились
+#        profile = await ClientProfile.objects.aget(user=victim)
+#        assert profile.first_name != "Hacked"
+
+#    async def test_client_profile_full_update_put(self, adrf_client):
+#        """
+#        VALIDATION: Verify a full update (PUT) with all fields.
+#        """
+#        user = await UserFactory.acreate(is_client=True)
+#        url = reverse('accounts:client-profile-detail', kwargs={'pk': user.pk})
+#        adrf_client.force_authenticate(user=user)
+#        
+#        payload = {
+#            "first_name": "Ivan",
+#            "last_name": "Ivanov",
+#            "gender": 1, # FEMALE из твоих IntegerChoices
+#            "country": "UA",
+#            "date_birth": "1995-05-20"
+#        }
+#        
+#        response = await adrf_client.put(url, data=payload)
+#        assert response.status_code == status.HTTP_200_OK
+#        
+#        # Проверка через модель (включая асинхронные проперти)
+#        profile = await ClientProfile.objects.aget(user=user)
+#        assert profile.gender == 1
+#        assert await profile.name == "Ivan Ivanov"
+#        assert await profile.is_adult is True
+
+    # --- EXPERT PROFILE DEEP TESTS ---
+
+    async def test_expert_update_education_m2m(self, adrf_client):
+        """
+        RELATIONSHIPS: Test ManyToMany updates for Expert education.
+        """
+        expert_user = await UserFactory.acreate(is_expert=True)
+        # Если есть Education, создаем его (замени на свою фабрику)
+        # edu = await EducationFactory.acreate() 
+        
+        url = reverse('accounts:expert-profile-detail', kwargs={'pk': expert_user.pk})
+        adrf_client.force_authenticate(user=expert_user)
+        
+        # Проверяем обновление списка стран и текстового поля образования
+        payload = {
+            "education_extra": "Advanced Psychology Course",
+            "countries_allowed": ["UA", "PL", "US"]
+        }
+        
+        response = await adrf_client.patch(url, data=payload)
+        assert response.status_code == status.HTTP_200_OK
+        
+        expert_profile = await ExpertProfile.objects.aget(user=expert_user)
+        assert expert_profile.education_extra == "Advanced Psychology Course"
+        assert len(expert_profile.countries_allowed) == 3
+        assert "PL" in expert_profile.countries_allowed
+
+    async def test_expert_profile_read_only_fields(self, adrf_client):
+        """
+        INTEGRITY: Verify that sensitive fields like 'user' cannot be changed via API.
+        """
+        expert_user = await UserFactory.acreate(is_expert=True)
+        other_user = await UserFactory.acreate()
+        url = reverse('accounts:expert-profile-detail', kwargs={'pk': expert_user.pk})
+        
+        adrf_client.force_authenticate(user=expert_user)
+        # Пытаемся перепривязать профиль к другому пользователю
+        payload = {"user": other_user.pk}
+        
+        await adrf_client.patch(url, data=payload)
+        
+        # Профиль все еще должен принадлежать исходному юзеру
+        profile = await ExpertProfile.objects.aget(pk=expert_user.pk)
+        assert profile.user_id == expert_user.pk
+
+    # --- SHARED / EDGE CASES ---
+
+    async def test_profile_partial_update_validation_error(self, adrf_client):
+        """
+        VALIDATION: Test invalid data (e.g. wrong country code).
+        """
+        user = await UserFactory.acreate(is_client=True)
+        url = reverse('accounts:client-profile-detail', kwargs={'pk': user.pk})
+        adrf_client.force_authenticate(user=user)
+        
+        # 'INVALID' не является валидным кодом страны по ISO
+        response = await adrf_client.patch(url, data={"country": "INVALID"})
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "country" in response.data
+
+    async def test_expert_can_view_client_profile_if_admin(self, adrf_client):
+        """
+        PERMISSIONS: Expert with is_staff=True should access client profiles.
+        """
+        client = await UserFactory.acreate(is_client=True)
+        admin_expert = await UserFactory.acreate(is_expert=True, is_staff=True)
+        url = reverse('accounts:client-profile-detail', kwargs={'pk': client.pk})
+        
+        adrf_client.force_authenticate(user=admin_expert)
+        response = await adrf_client.get(url)
+        
+        assert response.status_code == status.HTTP_200_OK
