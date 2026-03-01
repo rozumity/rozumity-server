@@ -1,24 +1,18 @@
+import rules
 
+from asgiref.sync import sync_to_async
+from rest_framework.permissions import BasePermission
 from rest_framework import permissions
+
 
 from accounts.models import TherapyContract
 from accounts.utils import get_profile
 
 
-class IsExpert(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            profile = await get_profile(request)
-            return "expert" in profile.__class__.__name__.lower()
-        return False
-
-
-class IsClient(permissions.BasePermission):
-    async def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            profile = await get_profile(request)
-            return "client" in profile.__class__.__name__.lower()
-        return False
+class IsProfileOwner(BasePermission):
+    async def has_object_permission(self, request, view, obj):
+        result = rules.has_perm('is_profile_owner', request.user, obj)
+        return result
 
 
 class IsContractSigner(permissions.BasePermission):

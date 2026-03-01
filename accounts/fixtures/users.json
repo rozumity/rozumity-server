@@ -40,7 +40,7 @@
       "password": "pbkdf2_sha256$1000000$M79VFlRrEXHI3gyWJzQ1vD$K+hkl62Wlac7jLygs73U0A9DNmFvo1ysfobosKJiIns=",
       "last_login": "2025-06-14T16:07:04.117Z",
       "is_superuser": true,
-      "email": "test@test.test",
+      "email": "test2@test.test",
       "is_client": false,
       "is_expert": false,
       "is_staff": true,

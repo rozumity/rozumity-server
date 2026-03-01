@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'djmoney',
     'django_ckeditor_5',
-    'rozumity',
+    'rules',
     'accounts'
 ]
 
@@ -239,3 +239,8 @@ CKEDITOR_5_CONFIGS = {
         'removePlugins': ['CKLogo', 'About']
     }
 }
+
+AUTHENTICATION_BACKENDS = (
+    'rules.permissions.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)

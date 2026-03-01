@@ -47,9 +47,15 @@ class ClientProfileAdmin(admin.ModelAdmin):
 
 @admin.register(ExpertProfile)
 class ExpertProfileAdmin(admin.ModelAdmin):
+    class EducationInline(admin.StackedInline):
+        model = Education
+        extra = 0
+        can_delete = False
+
     list_display = ('user', 'first_name', 'last_name', 'country', 'gender')
     search_fields = ('user__email', 'first_name', 'last_name')
     list_filter = ('country', 'gender')
+    inlines = (EducationInline,)
 
     def has_add_permission(self, request):
         return False

@@ -119,18 +119,22 @@ class ClientProfile(AbstractProfile):
 
 
 class ExpertProfile(AbstractProfile):
-    education = models.ManyToManyField('Education', blank=True)
-    education_extra = models.TextField(max_length=500, default="")
     countries_allowed = CountryField(
         multiple=True, blank=True, 
         blank_label=_("Select countries")
     )
+    education_extra = models.TextField(max_length=500, default="", blank=True)
 
     class Meta:
         verbose_name = _("Profile Expert")
         verbose_name_plural = _("Profiles Expert")
         default_related_name = "expertprofile"
     
+    @property
+    async def education_list(self):
+        """Повертає всі записи про освіту для цього експерта"""
+        return [e async for e in self.educations.all()]
+
     @property
     async def clients(self):
         contracts = await rel(self, "contracts")
@@ -191,6 +195,9 @@ class Education(models.Model):
         POST = 4, _("Postgraduate")
         DOC = 5, _("Doctor")
 
+    expert = models.ForeignKey(
+        ExpertProfile, on_delete=models.CASCADE, related_name="educations", blank=True, null=True
+    )
     university = models.ForeignKey(University, on_delete=models.PROTECT)
     degree = models.SmallIntegerField(choices=DegreeChoices.choices, default=DegreeChoices.COURSE)
     speciality = models.ForeignKey('Speciality', on_delete=models.PROTECT, null=True)
@@ -198,7 +205,7 @@ class Education(models.Model):
     date_end = models.DateField()
 
     def __str__(self):
-        return f'{self.get_degree_display()}, {self.speciality}, {self.university} ({self.date_start} - {self.date_end})'
+        return f'{self.get_degree_display()}, {self.speciality}, {self.university}'
 
     class Meta:
         verbose_name = _("Education")
@@ -206,8 +213,8 @@ class Education(models.Model):
 
     @property
     async def education_duration(self):
-        delta = self.date_start - self.date_end
-        return round(delta.days / 365)
+        delta = self.date_end - self.date_start
+        return round(delta.days / 365.25)
 
 
 class SubscriptionPlan(models.Model):

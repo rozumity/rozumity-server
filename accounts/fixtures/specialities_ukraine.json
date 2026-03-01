@@ -1,6 +1,6 @@
 [
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 1,
         "fields": {
             "code": "011",
@@ -10,7 +10,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 2,
         "fields": {
             "code": "012",
@@ -20,7 +20,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 3,
         "fields": {
             "code": "013",
@@ -30,7 +30,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 4,
         "fields": {
             "code": "014",
@@ -40,7 +40,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 5,
         "fields": {
             "code": "015",
@@ -50,7 +50,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 6,
         "fields": {
             "code": "016",
@@ -60,7 +60,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 7,
         "fields": {
             "code": "053",
@@ -70,7 +70,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 8,
         "fields": {
             "code": "053",
@@ -80,7 +80,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 9,
         "fields": {
             "code": "054",
@@ -90,7 +90,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 10,
         "fields": {
             "code": "224",
@@ -101,7 +101,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 11,
         "fields": {
             "code": "222",
@@ -112,7 +112,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 12,
         "fields": {
             "code": "225",
@@ -123,7 +123,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 13,
         "fields": {
             "code": "227",
@@ -134,7 +134,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 14,
         "fields": {
             "code": "229",
@@ -144,7 +144,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 15,
         "fields": {
             "code": "231",
@@ -154,7 +154,7 @@
         }
     },
     {
-        "model": "educations.Speciality",
+        "model": "accounts.Speciality",
         "pk": 16,
         "fields": {
             "code": "232",

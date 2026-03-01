@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from adrf.serializers import ModelSerializer
 from rest_framework.serializers import (
     EmailField, PrimaryKeyRelatedField, CharField
@@ -76,6 +77,7 @@ class UniversitySerializer(CountryFieldMixin, ModelSerializer):
 class EducationSerializer(ModelSerializer):
     university = PrimaryKeyRelatedField(queryset=University.objects.all(), required=False)
     speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all(), required=False)
+    expert = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all())
     degree_display = CharField(source='get_degree_display', read_only=True)
 
     class Meta:
@@ -84,7 +86,10 @@ class EducationSerializer(ModelSerializer):
 
     async def ato_representation(self, instance):
         representation = await super().ato_representation(instance)
-        representation['university'] = await UniversitySerializer(instance.university).adata
+        university = await sync_to_async(getattr)(instance, 'university')
+        speciality = await sync_to_async(getattr)(instance, 'speciality')
+        representation['university'] = await UniversitySerializer(university).adata
+        representation['speciality'] = await SpecialitySerializer(speciality).adata
         return representation
 
 
