@@ -217,13 +217,14 @@ DAISY_SETTINGS = {
     'SIDEBAR_FOOTNOTE': 'Developed by @imgvoid',
     'APPS_REORDER': {
         'auth': {
-            'hide': True,
+            'icon': 'fa-solid fa-person-military-pointing',
+            'name': 'Groups',
         },
         'accounts': {
             'icon': 'fa-solid fa-person-military-pointing',
-            'name': 'Authorization',
+            'name': 'Authorization API',
             'hide': False
-        }
+        },
     },
 }
 
