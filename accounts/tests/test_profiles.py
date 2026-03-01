@@ -145,9 +145,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from accounts.models import ClientProfile, ExpertProfile
-from rozumity.factories.accounts import UserFactory, SubscriptionPlanFactory
-# Предполагаем наличие фабрики для образования
-# from rozumity.factories.educations import EducationFactory 
+from rozumity.factories.accounts import UserFactory, EducationFactory 
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio

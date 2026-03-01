@@ -53,8 +53,7 @@ INSTALLED_APPS = [
     'djmoney',
     'django_ckeditor_5',
     'rozumity',
-    'accounts',
-    'educations'
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -198,9 +197,6 @@ SPECTACULAR_SETTINGS = {
             }
         }
     },
-    'PREPROCESSING_HOOKS': [
-        'adrf_caching.utils.preprocess_async_actions',
-    ],
 }
 
  # DEV ONLY
@@ -225,13 +221,8 @@ DAISY_SETTINGS = {
         },
         'accounts': {
             'icon': 'fa-solid fa-person-military-pointing',
-            'name': 'Administration',
+            'name': 'Authorization',
             'hide': False
-        },
-        'educations': {
-            'name': 'Education',
-            'hide': False,
-            'divider_title': "Management"
         }
     },
 }

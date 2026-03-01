@@ -155,13 +155,12 @@ class TestSubscriptionPlanAPI:
     async def test_list_plans_authenticated(self, adrf_client):
         """
         Verify that an authenticated user can list all plans.
-        Path: /subscription-plans/ -> name='subscription-plan-list'
         """
         await SubscriptionPlanFactory.acreate(title="Plan A", owner_type=0)
         await SubscriptionPlanFactory.acreate(title="Plan B", owner_type=1)
 
         user = await UserFactory.acreate()
-        url = reverse('accounts:subscription-plan-list')
+        url = reverse('accounts:subscription-plans-list')
 
         adrf_client.force_authenticate(user=user)
         response = await adrf_client.get(url)
@@ -183,7 +182,7 @@ class TestSubscriptionPlanAPI:
             owner_type=SubscriptionPlan.OwnerTypes.BOTH
         )
         user = await UserFactory.acreate()
-        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        url = reverse('accounts:subscription-plans-detail', kwargs={'pk': plan.pk})
 
         adrf_client.force_authenticate(user=user)
         response = await adrf_client.get(url)
@@ -201,11 +200,11 @@ class TestSubscriptionPlanAPI:
         """
         plan = await SubscriptionPlanFactory.acreate()
         user = await UserFactory.acreate(is_staff=True)
-        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        url = reverse('accounts:subscription-plans-detail', kwargs={'pk': plan.pk})
         
         adrf_client.force_authenticate(user=user)
         
-        list_url = reverse('accounts:subscription-plan-list')
+        list_url = reverse('accounts:subscription-plans-list')
         response_post = await adrf_client.post(list_url, data={"title": "New"})
         assert response_post.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
         
@@ -218,7 +217,7 @@ class TestSubscriptionPlanAPI:
         """
         plan = await SubscriptionPlanFactory.acreate(owner_type=SubscriptionPlan.OwnerTypes.EXPERT)
         user = await UserFactory.acreate()
-        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        url = reverse('accounts:subscription-plans-detail', kwargs={'pk': plan.pk})
 
         adrf_client.force_authenticate(user=user)
         response = await adrf_client.get(url)
@@ -231,7 +230,7 @@ class TestSubscriptionPlanAPI:
         """
         plan = await SubscriptionPlanFactory.acreate(title="CacheTest")
         user = await UserFactory.acreate()
-        url = reverse('accounts:subscription-plan-detail', kwargs={'pk': plan.pk})
+        url = reverse('accounts:subscription-plans-detail', kwargs={'pk': plan.pk})
         
         adrf_client.force_authenticate(user=user)
         

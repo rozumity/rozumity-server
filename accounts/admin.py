@@ -41,6 +41,9 @@ class ClientProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'first_name', 'last_name')
     list_filter = ('country', 'gender')
 
+    def has_add_permission(self, request):
+        return False
+
 
 @admin.register(ExpertProfile)
 class ExpertProfileAdmin(admin.ModelAdmin):
@@ -48,12 +51,24 @@ class ExpertProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'first_name', 'last_name')
     list_filter = ('country', 'gender')
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'first_name', 'last_name', 'country', 'gender')
     search_fields = ('user__email', 'first_name', 'last_name')
     list_filter = ('country', 'gender')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Education)

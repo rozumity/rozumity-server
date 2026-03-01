@@ -7,34 +7,45 @@ from .permissions import IsExpert
 from .models import *
 from .serializers import *
 
+
 class UserViewSet(ReadOnlyModelViewSetCached):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
 
     @extend_schema(summary="Get list of users")
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    async def alist(self, request, *args, **kwargs):
+        return await super().alist(request, *args, **kwargs)
 
     @extend_schema(summary="Get user details")
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    async def aretrieve(self, request, *args, **kwargs):
+        return await super().aretrieve(request, *args, **kwargs)
 
 
 class RetrieveUpdateClientProfileView(RetrieveUpdateAPIView):
     queryset = ClientProfile.objects.all()
     serializer_class = ClientProfileSerializer
     throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsUser,)
 
-    @extend_schema(summary="Retrieve one client profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Retrieve one client profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def get(self, request, *args, **kwargs):
         return await super().get(request, *args, **kwargs)
 
-    @extend_schema(summary="Update one client profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Update one client profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def put(self, request, *args, **kwargs):
         return await super().put(request, *args, **kwargs)
 
-    @extend_schema(summary="Partial update one client profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Partial update one client profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def patch(self, request, *args, **kwargs):
         return await super().patch(request, *args, **kwargs)
 
@@ -43,19 +54,28 @@ class RetrieveUpdateExpertProfileView(RetrieveUpdateAPIView):
     queryset = ExpertProfile.objects.prefetch_related("education").all()
     serializer_class = ExpertProfileSerializer
     throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
 
-    @extend_schema(summary="Retrieve one expert profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Retrieve one expert profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def get(self, request, *args, **kwargs):
         return await super().get(request, *args, **kwargs)
 
-    @extend_schema(summary="Update one expert profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Update one expert profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def put(self, request, *args, **kwargs):
         return await super().put(request, *args, **kwargs)
 
-    @extend_schema(summary="Partial update one expert profile by ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Partial update one expert profile by ID",
+        description="Permissions: owner, admin"
+    )
     async def patch(self, request, *args, **kwargs):
         return await super().patch(request, *args, **kwargs)
-    permission_classes = (IsExpert,)
 
 
 class SubscriptionPlanViewSet(ReadOnlyModelViewSetCached):
@@ -64,13 +84,19 @@ class SubscriptionPlanViewSet(ReadOnlyModelViewSetCached):
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
 
-    @extend_schema(summary="Retrieve a list of all subscription plans", description="Permissions: auth")
-    async def list(self, request, *args, **kwargs):
-        return await super().list(request, *args, **kwargs)
+    @extend_schema(
+        summary="Retrieve a list of all subscription plans",
+        description="Permissions: auth"
+    )
+    async def alist(self, request, *args, **kwargs):
+        return await super().alist(request, *args, **kwargs)
 
-    @extend_schema(summary="Retrieve a single subscription plan by its ID", description="Permissions: auth")
-    async def retrieve(self, request, *args, **kwargs):
-        return await super().retrieve(request, *args, **kwargs)
+    @extend_schema(
+        summary="Retrieve a single subscription plan by its ID",
+        description="Permissions: auth"
+    )
+    async def aretrieve(self, request, *args, **kwargs):
+        return await super().aretrieve(request, *args, **kwargs)
 
 
 class RetrieveUpdateTherapyContractView(RetrieveUpdateAPIView):
@@ -81,15 +107,24 @@ class RetrieveUpdateTherapyContractView(RetrieveUpdateAPIView):
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
 
-    @extend_schema(summary="Retrieve therapy contract by the ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Retrieve therapy contract by the ID",
+        description="Permissions: owner, admin"
+    )
     async def get(self, request, *args, **kwargs):
         return await super().get(request, *args, **kwargs)
 
-    @extend_schema(summary="Update therapy contract by the ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Update therapy contract by the ID",
+        description="Permissions: owner, admin"
+    )
     async def put(self, request, *args, **kwargs):
         return await super().put(request, *args, **kwargs)
 
-    @extend_schema(summary="Partial update therapy contract by the ID", description="Permissions: owner, admin")
+    @extend_schema(
+        summary="Partial update therapy contract by the ID",
+        description="Permissions: owner, admin"
+    )
     async def patch(self, request, *args, **kwargs):
         return await super().patch(request, *args, **kwargs)
 
@@ -102,15 +137,33 @@ class CreateTherapyContractView(CreateAPIView):
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsUser,)
 
-    @extend_schema(summary="Create new therapy contract", description="Permissions: auth")
+    @extend_schema(
+        summary="Create new therapy contract",
+        description="Permissions: auth"
+    )
     async def post(self, request, *args, **kwargs):
         return await super().post(request, *args, **kwargs)
+
 
 class UniversityReadOnlyViewSet(ReadOnlyModelViewSetCached):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
+    
+    @extend_schema(
+        summary="Retrieve a list of all universities",
+        description="Permissions: auth"
+    )
+    async def alist(self, request, *args, **kwargs):
+        return await super().alist(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve a single university by its ID",
+        description="Permissions: auth"
+    )
+    async def aretrieve(self, request, *args, **kwargs):
+        return await super().aretrieve(request, *args, **kwargs)
 
 
 class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
@@ -118,6 +171,21 @@ class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
     serializer_class = SpecialitySerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
+    
+    @extend_schema(
+        summary="Retrieve a list of all specialities",
+        description="Permissions: auth"
+    )
+    async def alist(self, request, *args, **kwargs):
+        return await super().alist(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve a single speciality by its ID",
+        description="Permissions: auth"
+    )
+    async def aretrieve(self, request, *args, **kwargs):
+        return await super().aretrieve(request, *args, **kwargs)
+
 
 class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Education.objects.select_related(
@@ -126,3 +194,31 @@ class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     serializer_class = EducationSerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsExpert,)
+
+    @extend_schema(
+        summary="Retrieve one profile's education by education ID",
+        description="Permissions: owner, admin"
+    )
+    async def get(self, request, *args, **kwargs):
+        return await super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update one profile's education by ID",
+        description="Permissions: owner, admin"
+    )
+    async def put(self, request, *args, **kwargs):
+        return await super().put(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Partial update one profile's education  by ID",
+        description="Permissions: owner, admin"
+    )
+    async def patch(self, request, *args, **kwargs):
+        return await super().patch(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete one profile's education  by ID",
+        description="Permissions: owner, admin"
+    )
+    async def delete(self, request, *args, **kwargs):
+        return await super().patch(request, *args, **kwargs)
