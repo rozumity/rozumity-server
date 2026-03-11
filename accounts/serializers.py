@@ -47,7 +47,7 @@ class ExpertProfileSerializer(ProfileSerializerBase):
     async def ato_representation(self, instance):
         representation = await super().ato_representation(instance)
         representation['education'] = await EducationSerializer(
-            instance.education.all(), many=True
+            instance.educations.all(), many=True
         ).adata
         return representation
 
