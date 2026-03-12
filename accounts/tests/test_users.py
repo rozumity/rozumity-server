@@ -1,15 +1,10 @@
 import pytest
-from datetime import timedelta
 from django.utils import timezone
-from accounts.models import TherapyContract
 from rozumity.factories.accounts import *
 from asgiref.sync import sync_to_async
 
 import pytest
-from datetime import date, timedelta
 from django.utils import timezone
-from accounts.models import TherapyContract
-from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 import pytest
 import uuid
@@ -26,15 +21,14 @@ class TestUserModelAdvanced:
     """
 
     async def test_email_uniqueness_enforced(self):
-        """
-        Verify that database prevents duplicate emails.
-        """
         email = "unique@rozumity.com"
         await UserFactory.acreate(email=email)
         
+        from accounts.models import User
+        from django.db import IntegrityError
+        
         with pytest.raises(IntegrityError):
-            # Attempt to create another user with the same email
-            await UserFactory.acreate(email=email)
+            await User.objects.acreate(email=email)
 
     async def test_email_normalization_by_manager(self):
         """
