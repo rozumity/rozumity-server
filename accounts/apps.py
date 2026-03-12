@@ -8,5 +8,4 @@ class AccountsConfig(AppConfig):
     verbose_name = _('Accounts')
     
     def ready(self):
-        import accounts.signals
         import rozumity.rules

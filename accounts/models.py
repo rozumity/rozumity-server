@@ -14,7 +14,9 @@ from djmoney.models.fields import MoneyField
 from rozumity.utils import rel
 
 from accounts.managers import EmailUserManager
-
+import asyncio
+from django.db import transaction
+from asgiref.sync import async_to_sync
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(
@@ -38,6 +40,44 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.email)
+    
+    def _create_profile_sync(self):
+        from accounts.models import ClientProfile, ExpertProfile, StaffProfile
+        if self.is_expert:
+            model = ExpertProfile
+        elif self.is_staff:
+            model = StaffProfile
+        else:
+            model = ClientProfile
+
+        model.objects.get_or_create(user=self)
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new:
+            transaction.on_commit(self._create_profile_sync)
+
+    async def asave(self, *args, **kwargs):
+        is_new = self._state.adding
+        await super().asave(*args, **kwargs)
+        if is_new:
+            transaction.on_commit(self._create_profile_sync)
+            
+    async def anonymize(self):
+        self.email = f"deleted_{uuid.uuid4().hex[:10]}@rozumity.ua"
+        self.is_active = False
+        self.is_deleted = True
+        self.set_unusable_password() 
+        
+        await self.asave(update_fields=['email', 'is_active', 'is_deleted', 'password'])
+        
+        profile = await self.get_profile()
+        if profile:
+            profile.first_name = "Deleted"
+            profile.last_name = "User"
+            profile.country = ""
+            await profile.asave()
 
 
 class AbstractProfile(models.Model):
