@@ -136,13 +136,14 @@ class RetrieveUpdateTherapyContractView(CacheInvalidationMixin, RetrieveUpdateAP
         return await super().patch(request, *args, **kwargs)
 
 
-class ListCreateTherapyContractView(ListCreateAPIView):
+class ListCreateTherapyContractView(CacheInvalidationMixin, ListCreateAPIView):
     queryset = TherapyContract.objects.select_related(
         "client", "expert", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsAuthenticatedAsync,)
+    invalidate_fields = ("expert_id","client_id")
 
     def get_queryset(self):
         user = self.request.user
@@ -208,7 +209,7 @@ class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
         return await super().aretrieve(request, *args, **kwargs)
 
 
-class EducationRetrieveUpdateDestroyView(CacheInvalidationMixin, RetrieveUpdateDestroyAPIView):
+class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Education.objects.select_related(
         "university", "speciality", "expert"
     ).all()
@@ -241,8 +242,14 @@ class EducationListCreateView(ListCreateAPIView):
     permission_classes = (IsExpert,)
 
     def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(expert_id=user.id)
+        user_id = self.request.user.id
+        return Education.objects.filter(
+            expert__user_id=user_id
+        ).select_related('university', 'speciality')
+
+    async def perform_acreate(self, serializer):
+        expert = await ExpertProfile.objects.aget(user_id=self.request.user.id)
+        await serializer.asave(expert=expert)
 
     @extend_schema(summary="Create education", description="Permissions: user is expert")
     async def post(self, request, *args, **kwargs):
