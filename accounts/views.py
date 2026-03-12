@@ -5,6 +5,7 @@ from adrf_caching.viewsets import ReadOnlyModelViewSetCached, ModelViewSetCached
 from adrf_caching.generics import (
     RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView
 )
+from adrf_caching.mixins import CacheInvalidationMixin
 from rozumity.permissions import (
     IsAuthenticatedAsync, IsAdminUserAsync, IsOwner, IsExpert
 )
@@ -104,13 +105,14 @@ class SubscriptionPlanViewSet(ReadOnlyModelViewSetCached):
         return await super().aretrieve(request, *args, **kwargs)
 
 
-class RetrieveUpdateTherapyContractView(RetrieveUpdateAPIView):
+class RetrieveUpdateTherapyContractView(CacheInvalidationMixin, RetrieveUpdateAPIView):
     queryset = TherapyContract.objects.select_related(
         "client", "expert", "client_plan", "expert_plan"
     ).all()
     serializer_class = TherapyContractSerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsOwner,)
+    invalidate_fields = ("expert_id","client_id")
 
     @extend_schema(
         summary="Retrieve therapy contract by the ID",
@@ -206,13 +208,14 @@ class SpecialityReadOnlyViewSet(ReadOnlyModelViewSetCached):
         return await super().aretrieve(request, *args, **kwargs)
 
 
-class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+class EducationRetrieveUpdateDestroyView(CacheInvalidationMixin, RetrieveUpdateDestroyAPIView):
     queryset = Education.objects.select_related(
         "university", "speciality", "expert"
     ).all()
     serializer_class = EducationSerializer
     throttle_classes = (ThrottleRateLogged,)
     permission_classes = (IsOwner,)
+    invalidate_fields = ("expert_id",)
 
     @extend_schema(summary="Retrieve education", description="Permissions: owner, admin")
     async def get(self, request, *args, **kwargs):
@@ -228,5 +231,26 @@ class EducationRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
 
     @extend_schema(summary="Delete education", description="Permissions: owner, admin")
     async def delete(self, request, *args, **kwargs):
-        # ВИПРАВЛЕНО: було super().patch, треба super().delete
         return await super().delete(request, *args, **kwargs)
+
+
+class EducationListCreateView(ListCreateAPIView):
+    queryset = Education.objects.select_related("university", "speciality", "expert").all()
+    serializer_class = EducationSerializer
+    throttle_classes = (ThrottleRateLogged,)
+    permission_classes = (IsExpert,)
+
+    def get_queryset(self):
+        user = self.request.user
+        return super().get_queryset().filter(expert_id=user.id)
+
+    @extend_schema(summary="Create education", description="Permissions: user is expert")
+    async def post(self, request, *args, **kwargs):
+        return await super().post(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve a list of user's educations",
+        description="Permissions: user is expert"
+    )
+    async def alist(self, request, *args, **kwargs):
+        return await super().alist(request, *args, **kwargs)

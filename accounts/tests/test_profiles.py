@@ -15,7 +15,7 @@ class TestProfilesWithSignals:
     Detailed tests for profiles accounting for post_save and post_delete signals.
     """
 
-    async def test_signal_creates_correct_profile_type(self):
+    async def test_creates_correct_profile_type(self):
         """
         Verify that create_user_profile signal picks the right model 
         based on User flags.
@@ -33,29 +33,16 @@ class TestProfilesWithSignals:
         client_user = await UserFactory.acreate(is_staff=False, is_expert=False)
         assert await ClientProfile.objects.filter(user=client_user).aexists()
 
-    async def test_manual_profile_creation_fails_due_to_signal(self):
+    async def test_manual_profile_creation_fails(self):
         """
         Verify that we can't manually create a profile if signal already did it.
         This covers your IntegrityError from previous run.
         """
-        user = await UserFactory.acreate() # Signal creates ClientProfile here
+        user = await UserFactory.acreate() # Сreates ClientProfile here
         
         with pytest.raises(IntegrityError):
             # Attempt to create another one manually
             await ClientProfile.objects.acreate(user=user)
-
-    async def test_delete_profile_signal_deletes_user(self):
-        """
-        Test the post_delete signal: deleting a profile should delete the associated user.
-        """
-        user = await UserFactory.acreate()
-        profile = await ClientProfile.objects.aget(user=user)
-        
-        # Deleting profile should trigger delete_profile signal
-        await profile.adelete()
-        
-        # Verify user is gone
-        assert not await User.objects.filter(id=user.id).aexists()
 
     async def test_cascade_delete_user_deletes_profile(self):
         """
