@@ -19,4 +19,5 @@ urlpatterns = [
     path("therapy-contracts/", views.ListCreateTherapyContractView.as_view(), name="therapy-contract-create"),
     path("therapy-contracts/<int:pk>/", views.RetrieveUpdateTherapyContractView.as_view(), name="therapy-contract-detail"),
     path("educations/<int:pk>/", views.EducationRetrieveUpdateDestroyView.as_view(), name="education-detail"),
+    path("educations/", views.EducationListCreateView.as_view(), name="education-create"),
 ]
