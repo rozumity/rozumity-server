@@ -1,6 +1,6 @@
 from adrf.serializers import ModelSerializer
 from rest_framework.serializers import (
-    EmailField, PrimaryKeyRelatedField, CharField, ChoiceField, ReadOnlyField
+    ChoiceField, ReadOnlyField
 )
 from djmoney.contrib.django_rest_framework import MoneyField
 from django_countries.serializer_fields import CountryField
@@ -37,7 +37,6 @@ class UniversitySerializer(CountryFieldMixin, ModelSerializer):
         fields = '__all__'
 
 class EducationSerializer(ModelSerializer):
-    # Вместо переопределения ato_representation для GET, используем разные поля для чтения и записи
     university_info = UniversitySerializer(source='university', read_only=True)
     speciality_info = SpecialitySerializer(source='speciality', read_only=True)
     degree_display = ReadOnlyField(source='get_degree_display')
@@ -47,14 +46,14 @@ class EducationSerializer(ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             'university': {'write_only': True},
-            'speciality': {'write_only': True}
+            'speciality': {'write_only': True},
+            'expert': {'read_only': True}
         }
 
 # --- Expert Profile (сложный случай) ---
 
 class ExpertProfileSerializer(ProfileSerializerBase):
     countries_allowed = CountryField(multiple=True)
-    # Прямое вложение (если нужно просто отдавать список при получении профиля)
     educations = EducationSerializer(many=True, read_only=True)
 
     class Meta:
@@ -79,7 +78,10 @@ class TherapyContractSerializer(ModelSerializer):
     class Meta:
         model = TherapyContract
         fields = "__all__"
-        read_only_fields = ('client', 'expert', "contract_start_date")
+        read_only_fields = ("contract_start_date", "status") 
+
+    def create(self, validated_data):
+        return super().create(validated_data)
 
 
 class SubscriptionPlanSerializer(ModelSerializer):
