@@ -17,6 +17,6 @@ urlpatterns = [
     path("client-profiles/<uuid:pk>/", views.RetrieveUpdateClientProfileView.as_view(), name="client-profile-detail"),
     path("expert-profiles/<uuid:pk>/", views.RetrieveUpdateExpertProfileView.as_view(), name="expert-profile-detail"),
     path("therapy-contracts/", views.ListCreateTherapyContractView.as_view(), name="therapy-contract-create"),
-    path("therapy-contracts/<uuid:pk>/", views.RetrieveUpdateTherapyContractView.as_view(), name="therapy-contract-detail"),
+    path("therapy-contracts/<int:pk>/", views.RetrieveUpdateTherapyContractView.as_view(), name="therapy-contract-detail"),
     path("educations/<int:pk>/", views.EducationRetrieveUpdateDestroyView.as_view(), name="education-detail"),
 ]
