@@ -1,12 +1,11 @@
 import pytest
+from django.core.exceptions import ValidationError
 from datetime import timedelta
 from django.utils import timezone
-from accounts.models import TherapyContract
+from asgiref.sync import sync_to_async
+
 from rozumity.factories.accounts import *
 
-import pytest
-from datetime import date, timedelta
-from django.utils import timezone
 from accounts.models import TherapyContract
 
 
@@ -251,3 +250,42 @@ class TestTherapyContractFull:
         """
         contract = await TherapyContractFactory.acreate(client=None, expert=None)
         assert "Contract | Client: None" in str(contract)
+
+    async def test_forever_constant_fits_db_constraints(self):
+        """
+        Ensure that the FOREVER value (999) does not violate 
+        any MaxValueValidators or database IntegerField limits.
+        """
+        # Testing both client and expert duration fields
+        try:
+            contract = await TherapyContractFactory.acreate(
+                client_plan_days=TherapyContract.DurationDays.FOREVER,
+                expert_plan_days=TherapyContract.DurationDays.FOREVER
+            )
+            
+            # Trigger full_clean to check for MaxValueValidator issues 
+            # (acreate doesn't always call full_clean by default)
+            await sync_to_async(contract.full_clean)()
+            
+            assert contract.client_plan_days == 999
+            assert contract.expert_plan_days == 999
+            
+        except ValidationError as e:
+            pytest.fail(f"FOREVER constant (999) caused a ValidationError: {e}")
+        except Exception as e:
+            pytest.fail(f"FOREVER constant (999) caused a database error: {e}")
+
+    async def test_extreme_duration_values(self):
+        """
+        Check if the field can handle values even larger than FOREVER, 
+        just in case of future expansion.
+        """
+        # Testing a 10-year equivalent in days
+        ten_years_days = 3650 
+        
+        contract = await TherapyContractFactory.acreate(
+            client_plan_days=ten_years_days
+        )
+        
+        refreshed = await TherapyContract.objects.aget(pk=contract.pk)
+        assert refreshed.client_plan_days == ten_years_days
