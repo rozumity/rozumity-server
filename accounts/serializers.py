@@ -1,119 +1,100 @@
-from asgiref.sync import sync_to_async
 from adrf.serializers import ModelSerializer
 from rest_framework.serializers import (
-    EmailField, PrimaryKeyRelatedField, CharField
+    EmailField, PrimaryKeyRelatedField, CharField, ChoiceField, ReadOnlyField
 )
+from djmoney.contrib.django_rest_framework import MoneyField
 from django_countries.serializer_fields import CountryField
-
 from rozumity.utils import CountryFieldMixin
-
 from accounts.models import *
 
-# --- Profile
+# --- Profile ---
 
 class UserSerializer(ModelSerializer):
-    email = EmailField()
-
     class Meta:
         model = User
         fields = ["id", "email", "is_staff", "is_client", "is_expert", "is_active", "date_joined"]
-        read_only_fields = fields.copy()
+        read_only_fields = fields
 
 
 class ProfileSerializerBase(CountryFieldMixin, ModelSerializer):
-    user = PrimaryKeyRelatedField(
-        queryset=User.objects.select_related('clientprofile','expertprofile').all()
-    )
+    user_email = ReadOnlyField(source='user.email')
     country = CountryField()
-    gender = CharField(source='get_gender_display')
-    custom_id = "user"
+    gender_display = ReadOnlyField(source='get_gender_display')
 
-
-class ClientProfileSerializer(ProfileSerializerBase):
     class Meta:
-        model = ClientProfile
-        fields = "__all__"
-        read_only_fields = ('date_birth', "user")
+        abstract = True
 
-
-class ExpertProfileSerializer(ProfileSerializerBase):
-    countries_allowed = CountryField()
-    
-    class Meta:
-        model = ExpertProfile
-        fields = "__all__"
-        read_only_fields = ('date_birth', 'user')
-
-    async def ato_representation(self, instance):
-        representation = await super().ato_representation(instance)
-        representation['education'] = await EducationSerializer(
-            instance.educations.all(), many=True
-        ).adata
-        return representation
-
-
-class StaffProfileSerializer(ProfileSerializerBase):
-    class Meta:
-        model = StaffProfile
-        fields = "__all__"
-        read_only_fields = ('date_birth', "user")
-
-# --- Education
+# --- Education ---
 
 class SpecialitySerializer(ModelSerializer):
     class Meta:
         model = Speciality
         fields = '__all__'
 
-
 class UniversitySerializer(CountryFieldMixin, ModelSerializer):
-    country = CountryField()
-
     class Meta:
         model = University
         fields = '__all__'
 
-
 class EducationSerializer(ModelSerializer):
-    university = PrimaryKeyRelatedField(queryset=University.objects.all(), required=False)
-    speciality = PrimaryKeyRelatedField(queryset=Speciality.objects.all(), required=False)
-    expert = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all())
-    degree_display = CharField(source='get_degree_display', read_only=True)
+    # Вместо переопределения ato_representation для GET, используем разные поля для чтения и записи
+    university_info = UniversitySerializer(source='university', read_only=True)
+    speciality_info = SpecialitySerializer(source='speciality', read_only=True)
+    degree_display = ReadOnlyField(source='get_degree_display')
 
     class Meta:
         model = Education
         fields = "__all__"
+        extra_kwargs = {
+            'university': {'write_only': True},
+            'speciality': {'write_only': True}
+        }
 
-    async def ato_representation(self, instance):
-        representation = await super().ato_representation(instance)
-        university = await sync_to_async(getattr)(instance, 'university')
-        speciality = await sync_to_async(getattr)(instance, 'speciality')
-        representation['university'] = await UniversitySerializer(university).adata
-        representation['speciality'] = await SpecialitySerializer(speciality).adata
-        return representation
+# --- Expert Profile (сложный случай) ---
 
-
-# --- Profile
-# Subscription ---
-
-class SubscriptionPlanSerializer(ModelSerializer):
-    owner_type = CharField(source='get_owner_type_display')
+class ExpertProfileSerializer(ProfileSerializerBase):
+    countries_allowed = CountryField(multiple=True)
+    # Прямое вложение (если нужно просто отдавать список при получении профиля)
+    educations = EducationSerializer(many=True, read_only=True)
 
     class Meta:
-        model = SubscriptionPlan
+        model = ExpertProfile
         fields = "__all__"
-        read_only_fields = ('owner_type',)
+        read_only_fields = ('user',)
 
+# --- Client Profile ---
+class ClientProfileSerializer(ProfileSerializerBase):
+    countries_allowed = CountryField(multiple=True)
+
+    class Meta:
+        model = ClientProfile
+        fields = "__all__"
+        read_only_fields = ('user',)
+
+# --- Therapy Contract ---
 
 class TherapyContractSerializer(ModelSerializer):
-    client = PrimaryKeyRelatedField(queryset=ClientProfile.objects.all(), required=False)
-    expert = PrimaryKeyRelatedField(queryset=ExpertProfile.objects.all(), required=False)
-    client_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all(), required=False)
-    expert_plan = PrimaryKeyRelatedField(queryset=SubscriptionPlan.objects.all(), required=False)
+    status_display = ReadOnlyField(source='get_status_display')
 
     class Meta:
         model = TherapyContract
         fields = "__all__"
         read_only_fields = ('client', 'expert', "contract_start_date")
 
-# --- Subscription
+
+class SubscriptionPlanSerializer(ModelSerializer):
+    owner_type = ChoiceField(
+        choices=SubscriptionPlan.OwnerTypes.choices, 
+        source='get_owner_type_display'
+    )
+    price = MoneyField(max_digits=14, decimal_places=2)
+    price_currency = ReadOnlyField()
+
+    class Meta:
+        model = SubscriptionPlan
+        fields = [
+            "id", "title", "description", "price", "price_currency",
+            "owner_type", "has_diary", "has_ai", "has_screening", 
+            "has_dyagnosis"
+        ]
+        read_only_fields = fields
