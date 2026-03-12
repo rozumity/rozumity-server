@@ -244,3 +244,10 @@ AUTHENTICATION_BACKENDS = (
     'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+ADRF_CACHING_SETTINGS = {
+    "TTL_OBJECT": 600,
+    "TTL_LIST": 300,
+    "TTL_USER_VER": 3600,
+    "PREFIX": "adrf_caching",
+}
