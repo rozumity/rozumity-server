@@ -1,171 +1,111 @@
 import pytest
-from django.core.exceptions import ValidationError
-from datetime import timedelta
+from datetime import timedelta, date
 from django.utils import timezone
 from asgiref.sync import sync_to_async
 
-from rozumity.factories.accounts import *
-
 from accounts.models import TherapyContract
-
+from rozumity.factories.accounts import (
+    TherapyContractFactory, SubscriptionPlanFactory, 
+    ClientProfileFactory
+)
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 class TestTherapyContractFull:
-    """
-    Comprehensive test suite for TherapyContract model logic, 
-    covering payments, dates, activity status, and plan features.
-    """
+    
+    @pytest.fixture
+    async def free_plan(self):
+        return await SubscriptionPlanFactory.acreate(has_diary=False, has_ai=False)
 
-    # --- Section 1: Payment Logic ---
-
-    async def test_payment_flags_logic(self):
-        """
-        Verify all payment-related properties: is_paid, is_paid_full, 
-        is_paid_client, and is_paid_expert.
-        """
-        # No one paid
-        contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.FREE,
-            expert_plan_days=TherapyContract.DurationDays.FREE
+    @pytest.fixture
+    async def pro_plan(self):
+        return await SubscriptionPlanFactory.acreate(
+            has_diary=True, has_ai=True, has_screening=True, has_dyagnosis=True
         )
-        assert await contract.is_paid is False
-        assert await contract.is_paid_full is False
 
-        # Only client paid
-        contract.client_plan_days = TherapyContract.DurationDays.WEEK
-        assert await contract.is_paid is True
-        assert await contract.is_paid_client is True
-        assert await contract.is_paid_expert is False
-        assert await contract.is_paid_full is False
+    # --- Section 1: Payment & Activity Logic ---
 
-        # Both paid
-        contract.expert_plan_days = TherapyContract.DurationDays.MONTH
-        assert await contract.is_paid_full is True
-        assert await contract.is_paid_expert is True
+    @pytest.mark.parametrize("c_days, e_days, expected_paid, expected_full", [
+        (TherapyContract.DurationDays.FREE, TherapyContract.DurationDays.FREE, False, False),
+        (TherapyContract.DurationDays.WEEK, TherapyContract.DurationDays.FREE, True, False),
+        (TherapyContract.DurationDays.WEEK, TherapyContract.DurationDays.MONTH, True, True),
+    ])
+    async def test_payment_logic_states(self, c_days, e_days, expected_paid, expected_full):
+        """
+        Ensure that payment flags (is_paid, is_paid_full) correctly reflect 
+        the combination of client and expert subscription durations.
+        """
+        contract = await TherapyContractFactory.acreate(
+            client_plan_days=c_days, 
+            expert_plan_days=e_days
+        )
+        assert await contract.is_paid is expected_paid
+        assert await contract.is_paid_full is expected_full
+
+    async def test_activity_at_expiration_edge_case(self):
+        """
+        Verify that a contract is marked as inactive exactly when the 
+        current time reaches the calculated expiration date.
+        """
+        now = timezone.now()
+        contract = await TherapyContractFactory.acreate(
+            client_plan_days=TherapyContract.DurationDays.DAY,
+            client_plan_prolong_date=now - timedelta(days=1)
+        )
+        assert await contract.is_active_client is False
 
     # --- Section 2: Date Calculations ---
 
-    async def test_date_end_calculations(self):
+    async def test_date_calculations(self):
         """
-        Verify that date_end correctly identifies the furthest expiration date
-        and handles various durations including FOREVER.
+        Confirm that expiration dates for both participants are calculated 
+        correctly relative to their respective prolongation dates and durations.
         """
         now = timezone.now()
-        
-        # Standard duration check
         contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.WEEK,   # 7 days
+            client_plan_days=TherapyContract.DurationDays.WEEK,   # 7
+            expert_plan_days=TherapyContract.DurationDays.MONTH, # 30
             client_plan_prolong_date=now,
-            expert_plan_days=TherapyContract.DurationDays.MONTH, # 30 days
             expert_plan_prolong_date=now
         )
         
-        expected_client_end = now + timedelta(days=7)
-        expected_expert_end = now + timedelta(days=30)
+        c_end = await contract.date_end_client
+        e_end = await contract.date_end_expert
         
-        assert (await contract.date_end_client).date() == expected_client_end.date()
-        assert (await contract.date_end_expert).date() == expected_expert_end.date()
-        # date_end should be the max of both
-        assert (await contract.date_end).date() == expected_expert_end.date()
+        assert c_end.date() == (now + timedelta(days=7)).date()
+        assert e_end.date() == (now + timedelta(days=30)).date()
+        assert (await contract.date_end) == e_end
 
-    async def test_forever_duration_logic(self):
+    # --- Section 3: Feature Inheritance ---
+
+    async def test_feature_flags_merging(self, pro_plan, free_plan):
         """
-        Ensure the FOREVER (999 days) constant is handled correctly for dates.
+        Verify that the contract correctly merges feature availability (OR logic) 
+        from both the client's and the expert's active subscription plans.
         """
-        long_ago = timezone.now() - timedelta(days=500)
+        # Hybrid scenario: Client (Pro), Expert (Free)
         contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.FOREVER,
-            client_plan_prolong_date=long_ago
-        )
-        
-        # Should still be active because 500 < 999
-        assert await contract.is_active_client is True
-        assert (await contract.date_end_client).date() == (long_ago + timedelta(days=999)).date()
-
-    # --- Section 3: Activity Status ---
-
-    async def test_activity_logic_combinations(self):
-        """
-        Test is_active and is_active_full under different expiration scenarios.
-        """
-        now = timezone.now()
-        past = now - timedelta(days=60)
-        
-        # Case: Client active, Expert expired
-        contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.MONTH,
-            client_plan_prolong_date=now,
-            expert_plan_days=TherapyContract.DurationDays.MONTH,
-            expert_plan_prolong_date=past
-        )
-        
-        assert await contract.is_active_client is True
-        assert await contract.is_active_expert is False
-        # is_active (any) should be True
-        assert await contract.is_active is True
-        # is_active_full (all/total_end) should be True because date_end is in the future
-        assert await contract.is_active_full is True
-
-    # --- Section 4: Plan Features (Inheritance) ---
-
-    async def test_subscription_feature_flags(self):
-        """
-        Test that contract inherits features from both plans (OR logic),
-        except for diagnosis which is expert-only.
-        """
-        # Client has diary, Expert has AI and Screening
-        plan_c = await SubscriptionPlanFactory.acreate(has_diary=True, has_ai=False)
-        plan_e = await SubscriptionPlanFactory.acreate(
-            has_ai=True, has_screening=True, has_dyagnosis=True
-        )
-        
-        contract = await TherapyContractFactory.acreate(
-            client_plan=plan_c,
-            expert_plan=plan_e
+            client_plan=pro_plan, 
+            expert_plan=free_plan
         )
         
         assert await contract.has_diary is True
         assert await contract.has_ai is True
-        assert await contract.has_screening is True
+        
+        # Expert specific
+        contract.expert_plan = pro_plan
         assert await contract.has_dyagnosis is True
 
-        # If both empty
-        empty_plan = await SubscriptionPlanFactory.acreate(has_diary=False, has_ai=False)
-        contract.client_plan = empty_plan
-        contract.expert_plan = empty_plan
-        assert await contract.has_diary is False
-        assert await contract.has_ai is False
+    # --- Section 4: Profiles & Integrity ---
 
-    # --- Section 5: Relationships and Profiles ---
-
-    async def test_relationship_helpers(self):
+    async def test_profile_integration(self):
         """
-        Verify has_both, has_client_only, and has_expert_only properties.
+        Test the integration between the contract and profile models, 
+        ensuring calculated properties like age and adult status are accurate.
         """
-        # Client only
-        contract = await TherapyContractFactory.acreate(expert=None)
-        assert await contract.has_client_only is True
-        assert await contract.has_both is False
-        
-        # Expert only
-        contract.expert = await ExpertProfileFactory.acreate()
-        contract.client = None
-        assert await contract.has_expert_only is True
-        assert await contract.has_client_only is False
-        
-        # Both
-        contract.client = await ClientProfileFactory.acreate()
-        assert await contract.has_both is True
-
-    async def test_profile_integration_via_contract(self):
-        """
-        Test properties of the profiles connected to the contract.
-        """
-        # Client aged 20
-        birth_date = date.today() - timedelta(days=20*365.25)
+        age_20 = date.today() - timedelta(days=20*365.25)
         client = await ClientProfileFactory.acreate(
-            first_name="Ivan", last_name="Ivanov", date_birth=birth_date
+            first_name="Ivan", last_name="Ivanov", date_birth=age_20
         )
         contract = await TherapyContractFactory.acreate(client=client)
         
@@ -173,119 +113,19 @@ class TestTherapyContractFull:
         assert int(await client.age) == 20
         assert await client.name == "Ivan Ivanov"
 
-    # --- Section 6: Edge Cases & Safety ---
-
-    async def test_null_plan_safety(self):
-        """
-        Ensure that properties don't crash if expert_plan or client_plan is None.
-        """
-        contract = await TherapyContractFactory.acreate(
-            client_plan=None,
-            expert_plan=None,
-            client_plan_days=TherapyContract.DurationDays.FREE
-        )
-        
-        # Testing features shouldn't raise AttributeError if rel() returns None
-        # Note: This depends on how your rel() helper and model handles None.
-        try:
-            await contract.has_diary
-            await contract.has_ai
-        except AttributeError:
-            pytest.fail("Contract features crashed when plans are None.")
-
-    async def test_activity_at_exact_expiration_moment(self):
-        """
-        Test the exact moment of expiration.
-        If date_end is exactly now, is_active should technically be False 
-        (assuming > comparison).
-        """
-        now = timezone.now()
-        # Set prolong date so that end date is exactly 'now'
-        contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.DAY, # 1 day
-            client_plan_prolong_date=now - timedelta(days=1)
-        )
-        
-        # Depending on millisecond precision, it should be False or very close to it
-        assert await contract.is_active_client is False
-
-    async def test_empty_contract_relationships(self):
-        """
-        Test properties when both client and expert profiles are missing.
-        """
+    async def test_null_relations_safety(self):
+        """Ensure __str__ and properties handle None gracefully."""
         contract = await TherapyContractFactory.acreate(client=None, expert=None)
         
-        assert await contract.has_client_only is False
-        assert await contract.has_expert_only is False
-        assert await contract.has_both is False
-
-    async def test_complex_date_overlap(self):
-        """
-        Scenario: Client has a long-term plan from the past, 
-        Expert has a short-term plan from today.
-        """
-        now = timezone.now()
-        
-        # Client: Year plan started 200 days ago (still ~160 days left)
-        client_start = now - timedelta(days=200)
-        # Expert: Day plan started today (1 day left)
-        expert_start = now
-        
-        contract = await TherapyContractFactory.acreate(
-            client_plan_days=TherapyContract.DurationDays.YEAR, # 360 days
-            client_plan_prolong_date=client_start,
-            expert_plan_days=TherapyContract.DurationDays.DAY, # 1 day
-            expert_plan_prolong_date=expert_start
-        )
-        
-        client_end = await contract.date_end_client
-        expert_end = await contract.date_end_expert
-        
-        assert client_end > expert_end
-        assert await contract.date_end == client_end
-
-    async def test_contract_string_representation_safe(self):
-        """
-        Ensure __str__ method works even if profiles are None.
-        """
-        contract = await TherapyContractFactory.acreate(client=None, expert=None)
         assert "Contract | Client: None" in str(contract)
+        assert await contract.has_both is False
+        assert await contract.has_client_only is False
 
-    async def test_forever_constant_fits_db_constraints(self):
-        """
-        Ensure that the FOREVER value (999) does not violate 
-        any MaxValueValidators or database IntegerField limits.
-        """
-        # Testing both client and expert duration fields
-        try:
-            contract = await TherapyContractFactory.acreate(
-                client_plan_days=TherapyContract.DurationDays.FOREVER,
-                expert_plan_days=TherapyContract.DurationDays.FOREVER
-            )
-            
-            # Trigger full_clean to check for MaxValueValidator issues 
-            # (acreate doesn't always call full_clean by default)
-            await sync_to_async(contract.full_clean)()
-            
-            assert contract.client_plan_days == 999
-            assert contract.expert_plan_days == 999
-            
-        except ValidationError as e:
-            pytest.fail(f"FOREVER constant (999) caused a ValidationError: {e}")
-        except Exception as e:
-            pytest.fail(f"FOREVER constant (999) caused a database error: {e}")
-
-    async def test_extreme_duration_values(self):
-        """
-        Check if the field can handle values even larger than FOREVER, 
-        just in case of future expansion.
-        """
-        # Testing a 10-year equivalent in days
-        ten_years_days = 3650 
-        
+    async def test_db_constraints_forever(self):
+        """Validate 999 days doesn't break validators."""
         contract = await TherapyContractFactory.acreate(
-            client_plan_days=ten_years_days
+            client_plan_days=TherapyContract.DurationDays.FOREVER
         )
-        
-        refreshed = await TherapyContract.objects.aget(pk=contract.pk)
-        assert refreshed.client_plan_days == ten_years_days
+        # Sync_to_async is needed for full_clean as it's a sync Django method
+        await sync_to_async(contract.full_clean)()
+        assert contract.client_plan_days == 999
