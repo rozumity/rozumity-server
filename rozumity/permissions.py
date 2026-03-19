@@ -23,14 +23,14 @@ class IsAuthenticatedOrReadOnlyAsync(IsAuthenticatedOrReadOnly):
 
 class IsClient(BasePermission):
     async def has_permission(self, request, view):
-        return rules.has_perm('is_client', request.user)
+        return await sync_to_async(rules.has_perm)('is_client', request.user)
 
 
 class IsExpert(BasePermission):
     async def has_permission(self, request, view):
-        return rules.has_perm('is_expert', request.user)
+        return await sync_to_async(rules.has_perm)('is_expert', request.user)
 
 
 class IsOwner(BasePermission):
     async def has_object_permission(self, request, view, obj):
-        return rules.has_perm('is_owner', request.user, obj)
+        return await sync_to_async(rules.has_perm)('is_owner', request.user, obj)
