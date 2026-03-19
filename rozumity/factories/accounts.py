@@ -105,16 +105,6 @@ class SubscriptionPlanFactory(Factory):
     duration = 14
 
 
-class SubscriptionFactory(Factory):
-    class Meta:
-        model = Subscriptions
-
-    user = factory.SubFactory(UserFactory)
-    plan = factory.SubFactory(SubscriptionPlanFactory)
-    is_client = True
-    start_date = factory.LazyFunction(timezone.now)
-
-
 class SubscriptionPlanExpertFactory(Factory):
     class Meta:
         model = SubscriptionPlan
@@ -124,6 +114,15 @@ class SubscriptionPlanExpertFactory(Factory):
     price = 50.00
     is_expert = True
     duration = 14
+
+
+class SubscriptionFactory(Factory):
+    class Meta:
+        model = Subscriptions
+
+    user = factory.SubFactory(UserFactory)
+    plan = factory.SubFactory(SubscriptionPlanFactory)
+    start_date = factory.LazyFunction(timezone.now)
 
 
 class SubscriptionExpertFactory(Factory):

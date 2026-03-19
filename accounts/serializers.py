@@ -97,14 +97,19 @@ class SubscriptionPlanSerializer(ModelSerializer):
         model = SubscriptionPlan
         fields = '__all__'
 
+# --- Subscription ---
+
+class SubscriptionSerializer(ModelSerializer):
+    plan_details = SubscriptionPlanSerializer(source='plan', read_only=True)
+
+    class Meta:
+        model = SubscriptionPlan
+        exclude = ('user', 'plan')
+
 # --- Therapy Contract ---
 
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
-
 class TherapyContractSerializer(ModelSerializer):
-    invite_email = serializers.EmailField(write_only=True, required=False)
+    invite_email = EmailField(write_only=True, required=False)
     client_details = ClientProfileSerializer(source='client', read_only=True)
     expert_details = ExpertProfileSerializer(source='expert', read_only=True)
     client = CharField(allow_null=True, default=None, write_only=True, required=False)
