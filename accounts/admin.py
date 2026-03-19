@@ -97,13 +97,19 @@ class SpecialityAdmin(admin.ModelAdmin):
 
 @admin.register(TherapyContract)
 class TherapyContractAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'expert', 'client_plan', 'expert_plan', 'contract_start_date')
-    search_fields = ('client__user__email', 'expert__user__email')
-    list_filter = ('client_plan', 'expert_plan')
+    list_display = ('client', 'expert', 'contract_start_date')
+    search_fields = ('id','client__user__email', 'expert__user__email')
+    list_filter = ('contract_start_date',)
 
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'owner_type', 'price',)
+    list_display = ('id', 'title', 'is_client', 'is_expert', 'price',)
     search_fields = ('title',)
-    list_filter = ('owner_type',)
+    list_filter = ('is_client', 'is_expert')
+
+
+@admin.register(Subscriptions)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('user__email', 'plan__title', 'start_date', 'end_date',)
+    search_fields = ('user__email', 'plan__title',)

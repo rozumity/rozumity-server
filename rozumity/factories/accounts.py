@@ -4,7 +4,8 @@ from datetime import date, timedelta
 from django.utils import timezone
 from accounts.models import (
     User, SubscriptionPlan, ClientProfile, ExpertProfile, 
-    TherapyContract, Speciality, University, Education
+    TherapyContract, Speciality, University, Education,
+    Subscriptions
 )
 from rozumity.factories.base import Factory
 
@@ -17,9 +18,23 @@ class UserFactory(Factory):
 
     id = factory.LazyFunction(uuid.uuid4)
     email = factory.Sequence(lambda n: f"user_{n}@rozumity.com")
-    is_client = False
+    is_client = True
     is_expert = False
-    is_staff = False  # Set to False by default to avoid creating StaffProfile unnecessarily
+    is_staff = False
+    is_active = True
+    date_joined = factory.LazyFunction(timezone.now)
+
+
+class UserExpertFactory(Factory):
+    class Meta:
+        model = User
+        django_get_or_create = ('email',)
+
+    id = factory.LazyFunction(uuid.uuid4)
+    email = factory.Sequence(lambda n: f"user_{n}@rozumity.com")
+    is_client = False
+    is_expert = True
+    is_staff = False
     is_active = True
     date_joined = factory.LazyFunction(timezone.now)
 
@@ -51,6 +66,7 @@ class ExpertProfileFactory(Factory):
     class Meta:
         model = ExpertProfile
         django_get_or_create = ('user',)
+        skip_postgeneration_save = True
 
     user = factory.SubFactory(UserFactory, is_expert=True, is_staff=False)
     first_name = factory.Faker("first_name", locale="en_US")
@@ -85,9 +101,38 @@ class SubscriptionPlanFactory(Factory):
     title = factory.Sequence(lambda n: f"Plan {n}")
     description = factory.Faker("sentence", nb_words=10)
     price = 50.00
-    owner_type = SubscriptionPlan.OwnerTypes.BOTH
-    has_diary = False
-    has_ai = False
+    is_client = True
+    duration = 14
+
+
+class SubscriptionFactory(Factory):
+    class Meta:
+        model = Subscriptions
+
+    user = factory.SubFactory(UserFactory)
+    plan = factory.SubFactory(SubscriptionPlanFactory)
+    is_client = True
+    start_date = factory.LazyFunction(timezone.now)
+
+
+class SubscriptionPlanExpertFactory(Factory):
+    class Meta:
+        model = SubscriptionPlan
+
+    title = factory.Sequence(lambda n: f"Plan {n}")
+    description = factory.Faker("sentence", nb_words=10)
+    price = 50.00
+    is_expert = True
+    duration = 14
+
+
+class SubscriptionExpertFactory(Factory):
+    class Meta:
+        model = Subscriptions
+
+    user = factory.SubFactory(UserExpertFactory)
+    plan = factory.SubFactory(SubscriptionPlanExpertFactory)
+    start_date = factory.LazyFunction(timezone.now)
 
 
 class TherapyContractFactory(Factory):
@@ -96,14 +141,7 @@ class TherapyContractFactory(Factory):
 
     client = factory.SubFactory(ClientProfileFactory)
     expert = factory.SubFactory(ExpertProfileFactory)
-    client_plan = factory.SubFactory(SubscriptionPlanFactory)
-    expert_plan = factory.SubFactory(SubscriptionPlanFactory)
     
-    client_plan_days = TherapyContract.DurationDays.MONTH
-    expert_plan_days = TherapyContract.DurationDays.MONTH
-    
-    client_plan_prolong_date = factory.LazyFunction(timezone.now)
-    expert_plan_prolong_date = factory.LazyFunction(timezone.now)
 
 # --- EDUCATIONS ---
 

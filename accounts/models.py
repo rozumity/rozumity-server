@@ -258,17 +258,21 @@ class Education(models.Model):
 
 
 class SubscriptionPlan(models.Model):
-    class OwnerTypes(models.IntegerChoices):
-        CLIENT = 0, _("Client")
-        EXPERT = 1, _("Expert")
-        BOTH = 2, _("Both")
+    class DurationDays(models.IntegerChoices):
+        FREE = 0, _("Free")
+        WEEK2 = 14, _("Two weeks")
+        MONTH = 30, _("Month")
+        MONTH3 = 90, _("Three months")
+        MONTH6 = 180, _("Half a year")
+        YEAR = 360, _("Year")
+        FOREVER = 999, _("Forever")
 
     title = models.CharField(max_length=64)
     description = models.TextField(max_length=500)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency='USD')
-    owner_type = models.SmallIntegerField(
-        choices=OwnerTypes.choices, default=OwnerTypes.BOTH
-    )
+    duration = models.SmallIntegerField(choices=DurationDays.choices, default=DurationDays.FREE)
+    is_client = models.BooleanField(default=False)
+    is_expert = models.BooleanField(default=False)
     has_diary = models.BooleanField(default=False)
     has_ai = models.BooleanField(default=False)
     has_screening = models.BooleanField(default=False)
@@ -280,20 +284,31 @@ class SubscriptionPlan(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.price} ({self.get_owner_type_display()})"
-    
+
+
+class Subscriptions(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+
+    def calculate_end_date(self):
+        start = self.start_date or timezone.now()
+        days = self.plan.duration
+        if days == SubscriptionPlan.DurationDays.FOREVER:
+            return start + timedelta(days=365*100)
+        return start + timedelta(days=days)
+
+    def save(self, *args, **kwargs):
+        if not self.end_date:
+            self.end_date = self.calculate_end_date()
+        super().save(*args, **kwargs)
+
     
 class TherapyContract(models.Model):
-    class DurationDays(models.IntegerChoices):
-        FREE = 0, _("Free")
-        DAY = 1, _("Day")
-        WEEK = 7, _("Week")
-        WEEK2 = 14, _("Two weeks")
-        MONTH = 30, _("Month")
-        MONTH3 = 90, _("Three months")
-        MONTH6 = 180, _("Half a year")
-        YEAR = 360, _("Year")
-        FOREVER = 999, _("Forever")
-
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, unique=True, editable=False, db_index=True
+    )
     client = models.ForeignKey(
         ClientProfile, on_delete=models.PROTECT,
         null=True, blank=True, related_name="contracts"
@@ -302,23 +317,9 @@ class TherapyContract(models.Model):
         ExpertProfile, on_delete=models.PROTECT,
         null=True, blank=True, related_name="contracts"
     )
-    client_plan = models.ForeignKey(
-        SubscriptionPlan, on_delete=models.PROTECT,
-        null=True, blank=True, related_name="contract_client"
-    )
-    expert_plan = models.ForeignKey(
-        SubscriptionPlan, on_delete=models.PROTECT,
-        null=True, blank=True, related_name="contract_expert"
-    )
-    client_plan_days = models.SmallIntegerField(
-        choices=DurationDays.choices, default=DurationDays.FREE
-    )
-    expert_plan_days = models.SmallIntegerField(
-        choices=DurationDays.choices, default=DurationDays.FREE
-    )
     contract_start_date = models.DateTimeField(default=timezone.now, editable=False)
-    client_plan_prolong_date = models.DateTimeField(default=timezone.now)
-    expert_plan_prolong_date = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = _("Therapy Contract")
@@ -326,121 +327,3 @@ class TherapyContract(models.Model):
 
     def __str__(self):
         return f'Contract | Client: {self.client}, Expert: {self.expert}'
-
-    @property
-    async def date_end_client(self):
-        if self.client_plan_days:
-            return self.client_plan_prolong_date + timedelta(
-                days=self.client_plan_days
-            )
-
-    @property
-    async def date_end_expert(self):
-        if self.expert_plan:
-            return self.expert_plan_prolong_date + timedelta(
-                days=self.expert_plan_days
-            )
-
-    @property
-    async def date_end(self):
-        # Safely collect dates and find max, avoiding None comparison issues
-        d_client = await self.date_end_client
-        d_expert = await self.date_end_expert
-        dates = [d for d in [d_client, d_expert] if d is not None]
-        return max(dates) if dates else None
-
-    @property
-    async def is_paid(self):
-        return any((
-            self.client_plan_days != self.DurationDays.FREE,
-            self.expert_plan_days != self.DurationDays.FREE
-        ))
-
-    @property
-    async def is_paid_full(self):
-        return all((
-            self.client_plan_days != self.DurationDays.FREE,
-            self.expert_plan_days != self.DurationDays.FREE
-        ))
-
-    @property
-    async def is_paid_client(self):
-        return self.client_plan_days != self.DurationDays.FREE
-
-    @property
-    async def is_paid_expert(self):
-        return self.expert_plan_days != self.DurationDays.FREE
-
-    @property
-    async def is_active_client(self):
-        if await self.is_paid_client:
-            return await self.date_end_client > timezone.now()
-        return False
-
-    @property
-    async def is_active_expert(self):
-        if await self.is_paid_expert:
-            return await self.date_end_expert > timezone.now()
-        return False
-
-    @property
-    async def is_active(self):
-        if await self.is_paid:
-            return any((
-                await self.is_active_client,
-                await self.is_active_expert
-            ))
-        return False
-
-    @property
-    async def is_active_full(self):
-        if await self.is_paid_full:
-            return await self.date_end > timezone.now()
-        return False
-
-    @property
-    async def has_client_only(self):
-        return all((await rel(self, "client"), not await rel(self, "expert")))
-
-    @property
-    async def has_expert_only(self):
-        return all((await rel(self, "expert"), not await rel(self, "client")))
-
-    @property
-    async def has_both(self):
-        return all((await rel(self, "expert"), await rel(self, "client")))
-
-    @property
-    async def has_diary(self):
-        # Fetch plans asynchronously
-        client_plan = await rel(self, "client_plan")
-        expert_plan = await rel(self, "expert_plan")
-        # Use getattr to safely access flags if plan is not None
-        return any((
-            getattr(client_plan, 'has_diary', False), 
-            getattr(expert_plan, 'has_diary', False)
-        ))
-
-    @property
-    async def has_ai(self):
-        client_plan = await rel(self, "client_plan")
-        expert_plan = await rel(self, "expert_plan")
-        return any((
-            getattr(client_plan, 'has_ai', False), 
-            getattr(expert_plan, 'has_ai', False)
-        ))
-
-    @property
-    async def has_screening(self):
-        client_plan = await rel(self, "client_plan")
-        expert_plan = await rel(self, "expert_plan")
-        return any((
-            getattr(client_plan, 'has_screening', False), 
-            getattr(expert_plan, 'has_screening', False)
-        ))
-
-    @property
-    async def has_dyagnosis(self):
-        # Only expert plan provides diagnosis feature
-        expert_plan = await rel(self, "expert_plan")
-        return getattr(expert_plan, 'has_dyagnosis', False) if expert_plan else False
